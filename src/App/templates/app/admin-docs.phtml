@@ -1,0 +1,170 @@
+<?php $this->layout('layout::default', ['title' => 'Documentation - Administration - ebest.pro']) ?>
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Documentation</h1>
+            <div>
+                <a href="/admin" class="btn btn-secondary mr-2">
+                    <span class="fas fa-arrow-left mr-2"></span>
+                    Retour à l'administration
+                </a>
+                <a href="/admin/logout" class="btn btn-secondary">
+                    <span class="fas fa-sign-out-alt mr-2"></span>
+                    Déconnexion
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow-soft border-light mb-4">
+            <div class="card-body">
+                <h2 class="h4 mb-3">Vérification du statut des sites web</h2>
+                <p class="mb-4">
+                    Cette application permet de surveiller le statut de plusieurs sites web en temps réel.
+                    Elle vérifie si les sites sont en ligne, hors ligne ou en erreur, et mesure leur temps de réponse.
+                </p>
+
+                <h3 class="h5 mb-3">Fonctionnalités principales</h3>
+                <ul class="mb-4">
+                    <li><strong>Vérification automatique</strong> : Vérification du statut HTTP de chaque site</li>
+                    <li><strong>Mesure du temps de réponse</strong> : Calcul du temps de réponse en millisecondes</li>
+                    <li><strong>Historique</strong> : Enregistrement de la dernière vérification pour chaque site</li>
+                    <li><strong>Statuts disponibles</strong> :
+                        <ul>
+                            <li><span class="badge badge-success">En ligne</span> : Site accessible (code HTTP 200-399)</li>
+                            <li><span class="badge badge-danger">Hors ligne</span> : Site inaccessible (code HTTP 400+)</li>
+                            <li><span class="badge badge-warning">Erreur</span> : Erreur de connexion (timeout, DNS, etc.)</li>
+                            <li><span class="badge badge-secondary">Inconnu</span> : Site non encore vérifié</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h3 class="h5 mb-3">Page publique</h3>
+                <p class="mb-3">
+                    La page principale (<code>/</code> ou <code>/status-check</code>) affiche la liste de tous les sites surveillés.
+                    Les utilisateurs peuvent :
+                </p>
+                <ul class="mb-4">
+                    <li>Voir le statut de chaque site</li>
+                    <li>Voir le temps de réponse de chaque site</li>
+                    <li>Voir la date de la dernière vérification</li>
+                    <li>Cliquer sur un site pour l'ouvrir dans un nouvel onglet</li>
+                    <li>Vérifier manuellement tous les sites en cliquant sur le bouton "Vérifier tous les sites"</li>
+                </ul>
+
+                <h3 class="h5 mb-3">Page d'administration</h3>
+                <p class="mb-3">
+                    La page d'administration (<code>/admin</code>) est protégée par un mot de passe et permet de :
+                </p>
+                <ul class="mb-4">
+                    <li><strong>Ajouter un nouveau site</strong> : Utilisez le formulaire en haut de la page pour ajouter une URL</li>
+                    <li><strong>Supprimer un site</strong> : Cliquez sur le bouton "Supprimer" à côté de chaque site</li>
+                    <li><strong>Voir la liste complète</strong> : Consultez tous les sites surveillés avec leurs statuts</li>
+                </ul>
+
+                <h3 class="h5 mb-3">API</h3>
+                <p class="mb-3">L'application expose plusieurs endpoints API :</p>
+                
+                <div class="mb-4">
+                    <h4 class="h6 mb-2">GET /api/status-check</h4>
+                    <p class="mb-2">Vérifie le statut de tous les sites et retourne les résultats.</p>
+                    <p class="mb-2"><strong>Réponse :</strong></p>
+                    <pre class="bg-light p-3 rounded"><code>{
+  "sites": [
+    {
+      "url": "https://exemple.com",
+      "status": "online",
+      "lastCheck": "2024-01-15 10:30:00",
+      "responseTime": 245.5
+    }
+  ]
+}</code></pre>
+                </div>
+
+                <div class="mb-4">
+                    <h4 class="h6 mb-2">POST /api/admin/sites</h4>
+                    <p class="mb-2">Ajoute un nouveau site à surveiller (nécessite une authentification).</p>
+                    <p class="mb-2"><strong>Corps de la requête :</strong></p>
+                    <pre class="bg-light p-3 rounded"><code>{
+  "url": "https://nouveau-site.com"
+}</code></pre>
+                    <p class="mb-2"><strong>Réponse (201) :</strong></p>
+                    <pre class="bg-light p-3 rounded"><code>{
+  "site": {
+    "url": "https://nouveau-site.com",
+    "status": "online",
+    "lastCheck": "2024-01-15 10:30:00",
+    "responseTime": 180.2
+  }
+}</code></pre>
+                </div>
+
+                <div class="mb-4">
+                    <h4 class="h6 mb-2">DELETE /api/admin/sites</h4>
+                    <p class="mb-2">Supprime un site de la liste (nécessite une authentification).</p>
+                    <p class="mb-2"><strong>Corps de la requête :</strong></p>
+                    <pre class="bg-light p-3 rounded"><code>{
+  "url": "https://site-a-supprimer.com"
+}</code></pre>
+                    <p class="mb-2"><strong>Réponse (200) :</strong></p>
+                    <pre class="bg-light p-3 rounded"><code>{
+  "message": "Site deleted successfully"
+}</code></pre>
+                </div>
+
+                <h3 class="h5 mb-3">Stockage des données</h3>
+                <p class="mb-3">
+                    Les sites surveillés sont stockés dans le fichier <code>data/sites.json</code> au format JSON.
+                    Ce fichier est créé automatiquement lors de la première utilisation avec les sites par défaut.
+                </p>
+                <p class="mb-3">
+                    <strong>Format du fichier :</strong>
+                </p>
+                <pre class="bg-light p-3 rounded"><code>[
+  {
+    "url": "https://onphi.org/",
+    "status": "online",
+    "lastCheck": "2024-01-15 10:30:00",
+    "responseTime": 245.5
+  },
+  {
+    "url": "https://tv.onphi.org/",
+    "status": "offline",
+    "lastCheck": "2024-01-15 10:30:00",
+    "responseTime": null
+  }
+]</code></pre>
+
+                <h3 class="h5 mb-3">Sécurité</h3>
+                <ul class="mb-4">
+                    <li>La page d'administration est protégée par un mot de passe</li>
+                    <li>Les sessions utilisent les cookies PHP natifs</li>
+                    <li>Les endpoints d'administration nécessitent une authentification</li>
+                    <li><strong>Important</strong> : Changez le mot de passe par défaut en production dans le fichier <code>AdminLoginHandler.php</code></li>
+                </ul>
+
+                <h3 class="h5 mb-3">Configuration</h3>
+                <ul class="mb-4">
+                    <li><strong>Timeout de connexion</strong> : 5 secondes</li>
+                    <li><strong>Timeout total</strong> : 10 secondes</li>
+                    <li><strong>User-Agent</strong> : Mozilla/5.0 (compatible; StatusChecker/1.0)</li>
+                    <li><strong>Vérification SSL</strong> : Activée</li>
+                </ul>
+
+                <h3 class="h5 mb-3">Dépannage</h3>
+                <div class="mb-4">
+                    <h4 class="h6 mb-2">Un site affiche toujours "Inconnu"</h4>
+                    <p>Cliquez sur le bouton "Vérifier tous les sites" pour effectuer une première vérification.</p>
+                </div>
+                <div class="mb-4">
+                    <h4 class="h6 mb-2">Un site affiche "Erreur"</h4>
+                    <p>Cela peut indiquer un problème de connexion, un timeout, ou une erreur DNS. Vérifiez que l'URL est correcte et que le site est accessible.</p>
+                </div>
+                <div class="mb-4">
+                    <h4 class="h6 mb-2">Impossible d'ajouter un site</h4>
+                    <p>Vérifiez que l'URL est valide et commence par <code>http://</code> ou <code>https://</code>. L'application ajoutera automatiquement <code>https://</code> si nécessaire.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

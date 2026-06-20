@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * Local configuration.
+ *
+ * Copy this file to `local.php` and change its settings as required.
+ * `local.php` is ignoré par git (données sensibles).
+ *
+ * Pour MySQL : décommentez et remplissez la clé 'database' ci-dessous.
+ * Puis : php bin/check-database.php && php bin/create-admin-user.php votre@email.fr "MotDePasse"
+ */
+
+declare(strict_types=1);
+
+return [
+    // 'app_url' => 'https://ebest.pro',
+    // 'mail' => ['from_email' => 'noreply@ebest.pro', 'from_name' => 'ebest.pro Admin'],
+
+    // MySQL (décommenter et adapter, puis renommer ce fichier en local.php)
+    'database' => [
+        'dsn'      => 'mysql:host=localhost;port=3306;dbname=ebest;charset=utf8mb4',
+        'username' => 'ebest',
+        'password' => 'votre_mot_de_passe',
+        'options'  => [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ],
+    ],
+];

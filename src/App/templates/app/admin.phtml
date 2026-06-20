@@ -1,0 +1,539 @@
+<?php $this->layout('layout::default', ['title' => 'Administration - ebest.pro']) ?>
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Administration des sites</h1>
+            <div>
+                <a href="/admin/docs" class="btn btn-info mr-2">
+                    <span class="fas fa-book mr-2"></span>
+                    Documentation
+                </a>
+                <a href="/admin/logout" class="btn btn-secondary">
+                    <span class="fas fa-sign-out-alt mr-2"></span>
+                    Déconnexion
+                </a>
+            </div>
+        </div>
+
+        <!-- Messages d'information en haut de la page -->
+        <div id="addSiteError" class="alert alert-danger mb-3" style="display: none; border: 2px solid #dc3545; border-radius: 5px;"></div>
+        <div id="addSiteSuccess" class="alert alert-success mb-3" style="display: none; border: 2px solid #28a745; border-radius: 5px;"></div>
+
+        <div class="card shadow-soft border-light mb-4">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Ajouter un nouveau site</h2>
+                <form id="addSiteForm" class="form-inline">
+                    <div class="form-group mr-2 mb-2">
+                        <input type="url" class="form-control" id="newSiteUrl" placeholder="https://exemple.com" required>
+                    </div>
+                    <button type="submit" class="btn btn-success mb-2">
+                        <span class="fas fa-plus mr-2"></span>
+                        Ajouter
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-soft border-light">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0">Liste des sites</h2>
+                    <button id="regenerateAllBtn" class="btn btn-warning btn-sm">
+                        <span class="fas fa-sync-alt mr-2"></span>
+                        Régénérer toutes les vignettes
+                    </button>
+                </div>
+                <div id="sitesList">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 200px;">Vignette</th>
+                                <th>Site</th>
+                                <th>Statut</th>
+                                <th>Temps de réponse</th>
+                                <th>Dernière vérification</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sitesTableBody">
+                            <?php foreach ($sites as $site): ?>
+                            <tr data-url="<?= $this->e($site['url']) ?>">
+                                <td>
+                                    <?php
+                                    $screenshotUrl = '/api/screenshot?url=' . urlencode($site['url']);
+                                    ?>
+                                    <a href="<?= $this->e($site['url']) ?>" target="_blank">
+                                        <img src="<?= $this->e($screenshotUrl) ?>" 
+                                             alt="Vignette de <?= $this->e($site['url']) ?>" 
+                                             class="img-thumbnail admin-screenshot" 
+                                             style="max-width: 180px; max-height: 120px; width: 180px; height: 120px; object-fit: cover; cursor: pointer; background: #f5f5f5;"
+                                             loading="lazy"
+                                             data-url="<?= $this->e($site['url']) ?>"
+                                             onerror="console.error('Erreur chargement vignette admin:', this.src); this.onerror=null; this.src='/api/screenshot?url='+encodeURIComponent('<?= $this->e($site['url']) ?>')+'&t='+Date.now();">
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="<?= $this->e($site['url']) ?>" target="_blank" style="color: #0066cc; text-decoration: underline;">
+                                        <?= $this->e($site['url']) ?>
+                                    </a>
+                                </td>
+                                <td>
+                                    <?php
+                                    $status = $site['status'] ?? 'unknown';
+                                    $badgeClasses = ['online' => 'success', 'offline' => 'danger', 'error' => 'warning', 'unknown' => 'secondary'];
+                                    $statusTexts = ['online' => 'En ligne', 'offline' => 'Hors ligne', 'error' => 'Erreur', 'unknown' => 'Inconnu'];
+                                    $badgeClass = $badgeClasses[$status] ?? 'secondary';
+                                    $statusText = $statusTexts[$status] ?? 'Inconnu';
+                                    ?>
+                                    <span class="badge badge-<?= $badgeClass ?>">
+                                        <?= $statusText ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if (isset($site['responseTime'])): ?>
+                                        <?= $this->e($site['responseTime']) ?> ms
+                                    <?php else: ?>
+                                        <span class="text-muted">-</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (isset($site['lastCheck'])): ?>
+                                        <?= $this->e($site['lastCheck']) ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">Jamais</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning regenerate-screenshot-btn mr-2" data-url="<?= $this->e($site['url']) ?>" title="Régénérer la vignette">
+                                        <span class="fas fa-sync-alt"></span>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger delete-site-btn" data-url="<?= $this->e($site['url']) ?>">
+                                        <span class="fas fa-trash mr-1"></span>
+                                        Supprimer
+                                    </button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php $this->start('javascript') ?>
+<script>
+(function() {
+    const addSiteForm = document.getElementById('addSiteForm');
+    const newSiteUrl = document.getElementById('newSiteUrl');
+    const addSiteError = document.getElementById('addSiteError');
+    const addSiteSuccess = document.getElementById('addSiteSuccess');
+    const sitesTableBody = document.getElementById('sitesTableBody');
+
+    function getStatusBadgeClass(status) {
+        const classes = {
+            'online': 'success',
+            'offline': 'danger',
+            'error': 'warning',
+            'unknown': 'secondary'
+        };
+        return classes[status] || 'secondary';
+    }
+
+    function getStatusText(status) {
+        const texts = {
+            'online': 'En ligne',
+            'offline': 'Hors ligne',
+            'error': 'Erreur',
+            'unknown': 'Inconnu'
+        };
+        return texts[status] || 'Inconnu';
+    }
+
+    function updateSitesTable(sites) {
+        sitesTableBody.innerHTML = sites.map(site => {
+            const badgeClass = getStatusBadgeClass(site.status);
+            const statusText = getStatusText(site.status);
+            const responseTime = site.responseTime ? site.responseTime + ' ms' : '<span class="text-muted">-</span>';
+            const lastCheck = site.lastCheck || '<span class="text-muted">Jamais</span>';
+            const screenshotUrl = `/api/screenshot?url=${encodeURIComponent(site.url)}&t=${Date.now()}`;
+            
+            return `
+                <tr data-url="${site.url}">
+                    <td>
+                        <a href="${site.url}" target="_blank">
+                            <img src="${screenshotUrl}" 
+                                 alt="Vignette de ${site.url}" 
+                                 class="img-thumbnail admin-screenshot" 
+                                 style="max-width: 180px; max-height: 120px; width: 180px; height: 120px; object-fit: cover; cursor: pointer; background: #f5f5f5;"
+                                 loading="lazy"
+                                 data-url="${site.url}"
+                                 onerror="console.error('Erreur chargement vignette admin:', this.src); this.onerror=null; this.src='/api/screenshot?url='+encodeURIComponent('${site.url}')+'&t='+Date.now();">
+                        </a>
+                    </td>
+                    <td>
+                        <a href="${site.url}" target="_blank" style="color: #0066cc; text-decoration: underline;">
+                            ${site.url}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge badge-${badgeClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td>${responseTime}</td>
+                    <td>${lastCheck}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning regenerate-screenshot-btn mr-2" data-url="${site.url}" title="Régénérer la vignette">
+                            <span class="fas fa-sync-alt"></span>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-site-btn" data-url="${site.url}">
+                            <span class="fas fa-trash mr-1"></span>
+                            Supprimer
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // Réattacher les événements
+        attachDeleteHandlers();
+        attachRegenerateHandlers();
+    }
+
+    function attachDeleteHandlers() {
+        document.querySelectorAll('.delete-site-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const url = this.getAttribute('data-url');
+                
+                if (!confirm(`Êtes-vous sûr de vouloir supprimer le site ${url} ?`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/admin/sites', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ url: url })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Erreur lors de la suppression');
+                    }
+
+                    // Recharger la liste des sites
+                    const listResponse = await fetch('/api/status-check');
+                    const listData = await listResponse.json();
+                    updateSitesTable(listData.sites);
+
+                    addSiteSuccess.textContent = 'Site supprimé avec succès';
+                    addSiteSuccess.style.display = 'block';
+                    setTimeout(() => {
+                        addSiteSuccess.style.display = 'none';
+                    }, 8000);
+                } catch (error) {
+                    alert('Erreur lors de la suppression du site: ' + error.message);
+                }
+            });
+        });
+    }
+
+    function attachRegenerateHandlers() {
+        // Gestionnaire pour régénérer une vignette individuelle
+        document.querySelectorAll('.regenerate-screenshot-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const url = this.getAttribute('data-url');
+                const row = this.closest('tr');
+                const img = row.querySelector('.admin-screenshot');
+                
+                // Désactiver le bouton pendant la régénération
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                
+                try {
+                    // Supprimer le cache
+                    const response = await fetch('/api/admin/sites', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            action: 'regenerate_screenshot',
+                            url: url 
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Erreur lors de la régénération');
+                    }
+
+                    // Forcer le rechargement de l'image avec un timestamp
+                    if (img) {
+                        // Afficher un indicateur de chargement
+                        img.style.opacity = '0.5';
+                        img.style.filter = 'blur(2px)';
+                        
+                        // Réinitialiser l'image pour forcer le rechargement
+                        const oldSrc = img.src;
+                        img.src = '';
+                        
+                        // Attendre un peu pour que le cache soit bien supprimé côté serveur
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // Recharger avec un timestamp unique pour éviter le cache du navigateur
+                        const timestamp = Date.now();
+                        const newSrc = `/api/screenshot?url=${encodeURIComponent(url)}&t=${timestamp}&nocache=1`;
+                        
+                        // Créer une nouvelle promesse pour le chargement avec retry
+                        const loadPromise = new Promise((resolve, reject) => {
+                            let attempts = 0;
+                            const maxAttempts = 3;
+                            let timeoutId = null;
+                            
+                            const tryLoad = () => {
+                                attempts++;
+                                const attemptSrc = newSrc + (attempts > 1 ? '&retry=' + attempts : '');
+                                
+                                // Nettoyer le timeout précédent
+                                if (timeoutId) clearTimeout(timeoutId);
+                                
+                                timeoutId = setTimeout(() => {
+                                    if (attempts < maxAttempts) {
+                                        tryLoad();
+                                    } else {
+                                        img.style.opacity = '1';
+                                        img.style.filter = 'none';
+                                        reject(new Error('Timeout lors du chargement'));
+                                    }
+                                }, 15000);
+                                
+                                // Définir les gestionnaires d'événements
+                                const onLoad = () => {
+                                    clearTimeout(timeoutId);
+                                    img.removeEventListener('load', onLoad);
+                                    img.removeEventListener('error', onError);
+                                    img.style.opacity = '1';
+                                    img.style.filter = 'none';
+                                    resolve();
+                                };
+                                
+                                const onError = () => {
+                                    clearTimeout(timeoutId);
+                                    img.removeEventListener('load', onLoad);
+                                    img.removeEventListener('error', onError);
+                                    
+                                    if (attempts < maxAttempts) {
+                                        setTimeout(() => {
+                                            img.src = attemptSrc;
+                                            tryLoad();
+                                        }, 1000);
+                                    } else {
+                                        img.style.opacity = '1';
+                                        img.style.filter = 'none';
+                                        reject(new Error('Impossible de charger la vignette après ' + maxAttempts + ' tentatives'));
+                                    }
+                                };
+                                
+                                img.addEventListener('load', onLoad);
+                                img.addEventListener('error', onError);
+                                
+                                // Définir la source de l'image
+                                img.src = attemptSrc;
+                            };
+                            
+                            // Démarrer le chargement
+                            tryLoad();
+                        });
+                        
+                        // Attendre le chargement (avec timeout global de 30 secondes)
+                        try {
+                            await Promise.race([
+                                loadPromise,
+                                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout global')), 30000))
+                            ]);
+                        } catch (err) {
+                            console.error('Erreur lors du chargement de la vignette:', err);
+                            img.style.opacity = '1';
+                            img.style.filter = 'none';
+                        }
+                    }
+
+                    addSiteSuccess.textContent = 'Vignette régénérée avec succès';
+                    addSiteSuccess.style.display = 'block';
+                    setTimeout(() => {
+                        addSiteSuccess.style.display = 'none';
+                    }, 8000);
+                } catch (error) {
+                    alert('Erreur lors de la régénération de la vignette: ' + error.message);
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = '<span class="fas fa-sync-alt"></span>';
+                }
+            });
+        });
+    }
+
+    // Gestionnaire pour régénérer toutes les vignettes
+    const regenerateAllBtn = document.getElementById('regenerateAllBtn');
+    if (regenerateAllBtn) {
+        regenerateAllBtn.addEventListener('click', async function() {
+            if (!confirm('Êtes-vous sûr de vouloir régénérer toutes les vignettes ? Cela peut prendre quelques minutes.')) {
+                return;
+            }
+
+            this.disabled = true;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm mr-2"></span>Régénération en cours...';
+
+            try {
+                // Récupérer la liste des sites
+                const listResponse = await fetch('/api/status-check');
+                const listData = await listResponse.json();
+                
+                if (!listResponse.ok || !listData.sites) {
+                    throw new Error('Erreur lors de la récupération de la liste des sites');
+                }
+
+                // Régénérer chaque vignette
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const site of listData.sites) {
+                    try {
+                        const response = await fetch('/api/admin/sites', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                action: 'regenerate_screenshot',
+                                url: site.url 
+                            })
+                        });
+
+                        if (response.ok) {
+                            successCount++;
+                        } else {
+                            errorCount++;
+                        }
+                    } catch (error) {
+                        errorCount++;
+                    }
+                }
+
+                // Recharger la page pour afficher les nouvelles vignettes
+                addSiteSuccess.textContent = `${successCount} vignette(s) régénérée(s) avec succès${errorCount > 0 ? `, ${errorCount} erreur(s)` : ''}`;
+                addSiteSuccess.style.display = 'block';
+                
+                // Recharger les images avec un délai pour chaque image
+                const screenshots = document.querySelectorAll('.admin-screenshot');
+                screenshots.forEach((img, index) => {
+                    const url = img.getAttribute('data-url');
+                    if (url) {
+                        // Afficher un indicateur de chargement
+                        img.style.opacity = '0.5';
+                        img.style.filter = 'blur(2px)';
+                        
+                        // Réinitialiser l'image
+                        img.src = '';
+                        
+                        // Attendre un peu entre chaque rechargement pour éviter la surcharge
+                        setTimeout(() => {
+                            const timestamp = Date.now() + index;
+                            img.src = `/api/screenshot?url=${encodeURIComponent(url)}&t=${timestamp}&nocache=1`;
+                            
+                            // Restaurer l'opacité quand l'image est chargée
+                            img.onload = function() {
+                                this.style.opacity = '1';
+                                this.style.filter = 'none';
+                            };
+                            img.onerror = function() {
+                                // Réessayer une fois
+                                this.src = `/api/screenshot?url=${encodeURIComponent(url)}&t=${timestamp + 1000}&nocache=1`;
+                                this.onload = function() {
+                                    this.style.opacity = '1';
+                                    this.style.filter = 'none';
+                                };
+                                this.onerror = function() {
+                                    this.style.opacity = '1';
+                                    this.style.filter = 'none';
+                                };
+                            };
+                        }, index * 500);
+                    }
+                });
+
+                setTimeout(() => {
+                    addSiteSuccess.style.display = 'none';
+                }, 10000);
+            } catch (error) {
+                alert('Erreur lors de la régénération des vignettes: ' + error.message);
+            } finally {
+                this.disabled = false;
+                this.innerHTML = originalText;
+            }
+        });
+    }
+
+    // Attacher les handlers initiaux
+    attachDeleteHandlers();
+    attachRegenerateHandlers();
+
+    addSiteForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const url = newSiteUrl.value.trim();
+        if (!url) {
+            addSiteError.textContent = 'Veuillez entrer une URL';
+            addSiteError.style.display = 'block';
+            return;
+        }
+
+        addSiteForm.querySelector('button[type="submit"]').disabled = true;
+        addSiteError.style.display = 'none';
+        addSiteSuccess.style.display = 'none';
+
+        try {
+            const response = await fetch('/api/admin/sites', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: url })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Erreur lors de l\'ajout du site');
+            }
+
+            // Recharger la liste des sites
+            const listResponse = await fetch('/api/status-check');
+            const listData = await listResponse.json();
+            updateSitesTable(listData.sites);
+
+            newSiteUrl.value = '';
+            addSiteSuccess.textContent = 'Site ajouté avec succès';
+            addSiteSuccess.style.display = 'block';
+            setTimeout(() => {
+                addSiteSuccess.style.display = 'none';
+            }, 8000);
+        } catch (error) {
+            addSiteError.textContent = error.message;
+            addSiteError.style.display = 'block';
+        } finally {
+            addSiteForm.querySelector('button[type="submit"]').disabled = false;
+        }
+    });
+})();
+</script>
+<?php $this->stop() ?>

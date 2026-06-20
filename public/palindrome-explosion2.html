@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Palindrome — o not bob ton o · or · o not bob ton o</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#020208; overflow:hidden; font-family:'Courier New',monospace; }
+  canvas { display:block; }
+  #sub {
+    position:fixed; bottom:26px; width:100%; text-align:center;
+    font-size:13px; letter-spacing:4px; color:rgba(180,255,180,.85);
+    text-shadow:0 0 14px rgba(80,255,80,.8); pointer-events:none;
+  }
+  #ph {
+    position:fixed; top:22px; width:100%; text-align:center;
+    font-size:11px; letter-spacing:5px; color:rgba(255,255,255,.3);
+    pointer-events:none; text-transform:uppercase;
+  }
+</style>
+</head>
+<body>
+<div id="ph">palindrome</div>
+<div id="sub">o · n · o · t · b · o · b · t · o · n · o · <span style="color:#44ff88">o · r · o</span> · o · n · o · t · b · o · b · t · o · n · o</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── Scene ────────────────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.fog   = new THREE.FogExp2(0x020208, 0.010);
+
+const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 600);
+camera.position.set(0, 8, 36);
+camera.lookAt(0, 4, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+document.body.appendChild(renderer.domElement);
+
+// ─── Lights ───────────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x0a1a0a, 6));
+const sun = new THREE.DirectionalLight(0xddffdd, 0.5);
+sun.position.set(8,25,10); scene.add(sun);
+
+const firePL = [-12,-5,0,5,12].map(x => {
+  const pl = new THREE.PointLight(0x00ff66, 0, 32);
+  pl.position.set(x,5,1); scene.add(pl); return pl;
+});
+const capPL = new THREE.PointLight(0x44ff88, 0, 45);
+capPL.position.set(0,14,0); scene.add(capPL);
+
+// ─── Ground ───────────────────────────────────────────────────────────────────
+const gndMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(200,120),
+  new THREE.MeshPhongMaterial({ color:0x060e08, shininess:20, specular:0x0a1a0a })
+);
+gndMesh.rotation.x = -Math.PI/2;
+scene.add(gndMesh);
+scene.add(new THREE.GridHelper(160,50, 0x083318, 0x040c08));
+
+// ─── Stars ────────────────────────────────────────────────────────────────────
+(()=>{
+  const p=new Float32Array(900*3);
+  for(let i=0;i<900;i++){p[i*3]=(Math.random()-.5)*400;p[i*3+1]=20+Math.random()*200;p[i*3+2]=(Math.random()-.5)*400;}
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xffffff,size:.3,transparent:true,opacity:.5,sizeAttenuation:true})));
+})();
+
+// ─── Palindrome ───────────────────────────────────────────────────────────────
+// o not bob ton o or o not bob ton o  (25 letters, center = r)
+const PALI = ['o','n','o','t','b','o','b','t','o','n','o',
+              'o','r','o',
+              'o','n','o','t','b','o','b','t','o','n','o'];
+const N = PALI.length; // 25
+
+function makeLetterTex(ch, idx) {
+  const S=128, cv=document.createElement('canvas');
+  cv.width=cv.height=S;
+  const ctx=cv.getContext('2d');
+  const dist=Math.abs(idx-(N-1)/2)/((N-1)/2);
+  // Green palette: center=140° bright, edges=180° teal
+  const hue=Math.round(140+dist*40);
+  const lit=18+Math.round((1-dist)*15);
+  const r=18;
+  ctx.fillStyle=`hsl(${hue},60%,${lit}%)`;
+  ctx.beginPath();
+  ctx.moveTo(r,0);ctx.lineTo(S-r,0);ctx.arcTo(S,0,S,r,r);
+  ctx.lineTo(S,S-r);ctx.arcTo(S,S,S-r,S,r);
+  ctx.lineTo(r,S);ctx.arcTo(0,S,0,S-r,r);
+  ctx.lineTo(0,r);ctx.arcTo(0,0,r,0,r);ctx.closePath();ctx.fill();
+  const grd=ctx.createRadialGradient(S/2,S/2,0,S/2,S/2,S*.6);
+  grd.addColorStop(0,`hsla(${hue+20},100%,70%,0.18)`);
+  grd.addColorStop(1,'transparent');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,S,S);
+  ctx.shadowBlur=20; ctx.shadowColor=`hsl(${hue+20},100%,65%)`;
+  ctx.fillStyle='#fff';
+  ctx.font='bold 70px "Courier New",monospace';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(ch.toUpperCase(),S/2,S/2+3);
+  return new THREE.CanvasTexture(cv);
+}
+
+const SP=1.5, HW=(N-1)*SP/2;
+const posA = PALI.map((_,i)=>new THREE.Vector3(i*SP-HW, 0.75, 0));
+const rng=(a,b)=>a+(b-a)*Math.random();
+const posB = PALI.map((_,i)=>new THREE.Vector3(posA[i].x+rng(-20,20),rng(5,18),rng(-10,10)));
+
+// Mushroom: 8 stem + 17 cap
+const posM = (()=>{
+  const out=[]; const nS=8,nC=N-nS;
+  for(let i=0;i<nS;i++){
+    const t=i/(nS-1),ang=t*Math.PI*3.2;
+    out.push(new THREE.Vector3(Math.sin(ang)*1.0,1.2+t*8.5,Math.cos(ang)*1.0));
+  }
+  for(let i=0;i<nC;i++){
+    const rf=Math.sqrt((i+.5)/nC),theta=Math.PI*(1+Math.sqrt(5))*i;
+    const R=7.5*rf, y=11.5+(1-rf*rf)*2.5;
+    out.push(new THREE.Vector3(R*Math.cos(theta),y,R*Math.sin(theta)*.43));
+  }
+  return out;
+})();
+
+// Smoke ring
+const smokeParts=(()=>{
+  const cnt=50,pos=new Float32Array(cnt*3);
+  for(let i=0;i<cnt;i++){const a=(i/cnt)*Math.PI*2,r=7+Math.random()*2.5;pos[i*3]=Math.cos(a)*r;pos[i*3+1]=11+Math.random()*2;pos[i*3+2]=Math.sin(a)*r*.4;}
+  const sg=new THREE.BufferGeometry();
+  sg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const sm=new THREE.Points(sg,new THREE.PointsMaterial({color:0x88ffaa,size:1.6,transparent:true,opacity:0,sizeAttenuation:true,depthWrite:false,blending:THREE.AdditiveBlending}));
+  scene.add(sm); return sm;
+})();
+
+const meshes = PALI.map((ch,i)=>{
+  const m=new THREE.Mesh(
+    new THREE.PlaneGeometry(1.3,1.3),
+    new THREE.MeshBasicMaterial({map:makeLetterTex(ch,i),transparent:true,depthWrite:false,side:THREE.DoubleSide})
+  );
+  m.position.copy(posA[i]); scene.add(m); return m;
+});
+
+// ─── FSM ─────────────────────────────────────────────────────────────────────
+const PHASES=['REST','BLAST','FORM','HOLD','RETURN','SHOW'];
+const DUR={REST:2.5,BLAST:1.3,FORM:1.8,HOLD:2.2,RETURN:2.0,SHOW:3.0};
+const LABELS={REST:'palindrome',BLAST:'explosion',FORM:'champignon',HOLD:'champignon',RETURN:'retour',SHOW:'palindrome'};
+let ph=0, pt=0;
+const clock=new THREE.Clock();
+const phDiv=document.getElementById('ph');
+
+const eOut=t=>1-(1-t)**3;
+const eIO=t=>t<.5?4*t**3:1-(-2*t+2)**3/2;
+
+let camY=8, camLookY=4, camAng=0;
+
+function tick(){
+  requestAnimationFrame(tick);
+  const dt=Math.min(clock.getDelta(),.07); pt+=dt;
+  const name=PHASES[ph], dur=DUR[name], t=Math.min(pt/dur,1);
+  phDiv.textContent=LABELS[name];
+
+  meshes.forEach((m,i)=>{
+    const rp=posA[i],bp=posB[i],mp=posM[i];
+    if(name==='REST'||name==='SHOW'){
+      m.position.copy(rp); m.lookAt(camera.position); m.scale.set(1,1,1);
+    } else if(name==='BLAST'){
+      m.position.lerpVectors(rp,bp,eOut(t));
+      const s=dt*(Math.random()-.5)*9; m.rotateX(s); m.rotateY(s*1.3);
+      m.scale.setScalar(.5+eOut(t)*.6);
+    } else if(name==='FORM'){
+      m.position.lerpVectors(bp,mp,eIO(t)); m.lookAt(camera.position); m.scale.setScalar(.8+t*.2);
+    } else if(name==='HOLD'){
+      m.position.copy(mp); m.lookAt(camera.position);
+    } else if(name==='RETURN'){
+      m.position.lerpVectors(mp,rp,eIO(t)); m.lookAt(camera.position);
+      m.scale.setScalar(1+Math.max(0,Math.sin(t*Math.PI))*.15);
+    }
+  });
+
+  const onFire=(name==='BLAST'||name==='FORM'||name==='HOLD');
+  firePL.forEach((pl,i)=>{
+    const tgt=onFire?(1.6+Math.sin(Date.now()*.008+i)*.8)*t:0;
+    pl.intensity+=(tgt-pl.intensity)*dt*5;
+  });
+  capPL.intensity=(name==='FORM'||name==='HOLD')?(2.2+(Math.sin(Date.now()*.009)*.5+.5)*1.3)*Math.min(t*2,1):capPL.intensity*.9;
+  smokeParts.material.opacity=(name==='FORM'||name==='HOLD')?Math.min(t*1.5,.5):(name==='RETURN'?(1-t)*.5:0);
+
+  const mush=(name==='FORM'||name==='HOLD');
+  camY+=(( mush?17:8)-camY)*dt*2;
+  camLookY+=((mush?11:4)-camLookY)*dt*2;
+  camAng+=dt*(name==='BLAST'?.42:.13);
+  camera.position.set(Math.sin(camAng)*38,camY,Math.cos(camAng)*38);
+  camera.lookAt(0,camLookY,0);
+
+  if(pt>=dur){ph=(ph+1)%PHASES.length;pt=0;}
+  renderer.render(scene,camera);
+}
+tick();
+
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>

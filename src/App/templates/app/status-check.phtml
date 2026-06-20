@@ -1,0 +1,190 @@
+<?php $this->layout('layout::default', ['title' => 'Vérification du statut des sites - ebest.pro']) ?>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-soft border-light mb-4">
+            <div class="card-body">
+                <div class="mb-4 pb-3 border-bottom">
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="mr-4" style="flex-shrink: 0;">
+                            <a href="https://github.com/ebest02" target="_blank" style="display: inline-block; width: 120px; height: 120px; border-radius: 50%; overflow: hidden; box-shadow: 5px 5px 10px #d1d9e6, -5px -5px 10px #ffffff; border: 1px solid #D1D9E6;">
+                                <img src="https://github.com/ebest02.png" 
+                                     alt="GitHub profile @ebest02" 
+                                     style="width: 120px; height: 120px; object-fit: cover; display: block; margin: 0; padding: 0;"
+                                     onerror="this.style.display='none';">
+                            </a>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="mb-0">
+                                <strong>@ebest02</strong>, est membre de <strong>ONPhI</strong> (Organisation Non-Philosophique Internationale) - <a href="https://onphi.org" target="_blank" style="color: #0066cc; text-decoration: underline;">https://onphi.org</a>, et en est également le président. Formé à l'université Paris X, ancien étudiant de François Laruelle, il travaille depuis 2000 dans le secteur du traitement de données, le web en particulier.
+                            </p>
+                            <p class="mb-0 mt-2">
+                                En plus des compétences en programmation nécessaires pour créer des sites web ou des applications connectées, il a particulièrement développé un savoir-faire non spécifique dans la manipulation et l'exploitation du traitement de données.
+                            </p>
+                            <p class="mb-0 mt-3">
+                                <a href="https://github.com/ebest02" target="_blank" class="btn btn-sm btn-secondary shadow-soft">
+                                    <span class="fab fa-github mr-2"></span>
+                                    Voir le profil GitHub
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-top">
+                        <p class="mb-0">
+                            <strong>@ebest02</strong>, is a member of <strong>ONPhI</strong> (Organisation Non-Philosophique Internationale) - <a href="https://onphi.org" target="_blank" style="color: #0066cc; text-decoration: underline;">https://onphi.org</a>, and also its president. Educated at université Paris X, former student of François Laruelle's, he is working since 2000 in the data processing sector, the web in particular.
+                        </p>
+                        <p class="mb-0 mt-2">
+                            In addition to requisite programming skills to create web sites or connected apps, he particularly developed unspecific know-how in manipulating and exploiting data processing.
+                        </p>
+                        <p class="mb-0 mt-3">
+                            <a href="https://github.com/ebest02" target="_blank" class="btn btn-sm btn-secondary shadow-soft">
+                                <span class="fab fa-github mr-2"></span>
+                                View GitHub profile
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte avec toutes les vignettes -->
+        <div class="card shadow-soft border-light">
+            <div class="card-body">
+                <h2 class="h5 mb-4">Sites web surveillés</h2>
+                <div class="row">
+                    <?php foreach ($sites as $site): ?>
+                    <?php
+                    $screenshotUrl = '/api/screenshot?url=' . urlencode($site['url']);
+                    $siteId = 'home-screenshot-' . md5($site['url']);
+                    ?>
+                    <div class="col-md-4 col-lg-3 mb-4">
+                        <div class="card shadow-soft border-light h-100">
+                            <div class="card-body p-3">
+                                <div style="position: relative; width: 100%; padding-top: 75%; background: #e6e7ee; border-radius: 8px; overflow: hidden; box-shadow: inset 5px 5px 10px #d1d9e6, inset -5px -5px 10px #ffffff;">
+                                    <div id="<?= $siteId ?>-spinner" class="screenshot-spinner" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2;">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 1.5rem; height: 1.5rem;">
+                                            <span class="sr-only">Chargement...</span>
+                                        </div>
+                                    </div>
+                                    <a href="<?= $this->e($site['url']) ?>" target="_blank" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
+                                        <img src="<?= $this->e($screenshotUrl) ?>" 
+                                             alt="Vignette de <?= $this->e($site['url']) ?>" 
+                                             class="screenshot-img" 
+                                             style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s;"
+                                             loading="lazy"
+                                             data-url="<?= $this->e($site['url']) ?>"
+                                             data-site-id="<?= $siteId ?>"
+                                             onload="this.style.opacity='1'; this.setAttribute('data-loaded', 'true'); const spinner = document.getElementById('<?= $siteId ?>-spinner'); if(spinner) spinner.style.display='none';"
+                                             onerror="console.error('Erreur chargement vignette pour <?= $this->e($site['url']) ?>:', this.src); let retries = parseInt(this.getAttribute('data-retries') || '0'); if(retries < 3) { this.setAttribute('data-retries', (retries + 1).toString()); this.src='/api/screenshot?url='+encodeURIComponent('<?= $this->e($site['url']) ?>')+'&t='+Date.now()+'&nocache=1'; } else { console.error('Échec après 3 tentatives pour <?= $this->e($site['url']) ?>'); }">
+                                    </a>
+                                </div>
+                                <div class="mt-3 text-center">
+                                    <a href="<?= $this->e($site['url']) ?>" target="_blank" style="color: #44476A; text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+                                        <?= $this->e(parse_url($site['url'], PHP_URL_HOST) ?: $site['url']) ?>
+                                    </a>
+                                    <?php
+                                    $status = $site['status'] ?? 'unknown';
+                                    $badgeClasses = ['online' => 'success', 'offline' => 'danger', 'error' => 'warning', 'unknown' => 'secondary'];
+                                    $statusTexts = ['online' => 'En ligne', 'offline' => 'Hors ligne', 'error' => 'Erreur', 'unknown' => 'Inconnu'];
+                                    $badgeClass = $badgeClasses[$status] ?? 'secondary';
+                                    $statusText = $statusTexts[$status] ?? 'Inconnu';
+                                    ?>
+                                    <div class="mt-2">
+                                        <span class="badge badge-<?= $badgeClass ?> badge-sm">
+                                            <?= $statusText ?>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php $this->start('javascript') ?>
+<script>
+(function() {
+    // Fonction pour afficher une image
+    function showImage(img, siteId) {
+        if (img.getAttribute('data-shown') === 'true') return; // Déjà affichée
+        img.style.opacity = '1';
+        img.setAttribute('data-shown', 'true');
+        const spinner = document.getElementById(siteId + '-spinner');
+        if (spinner) spinner.style.display = 'none';
+    }
+    
+    // Fonction pour vérifier si une image est chargée
+    function isImageLoaded(img) {
+        return img.complete && 
+               img.naturalHeight !== 0 && 
+               img.naturalWidth !== 0 &&
+               img.naturalWidth > 0 && 
+               img.naturalHeight > 0;
+    }
+    
+    // Fonction pour initialiser les vignettes
+    function initializeScreenshots() {
+        document.querySelectorAll('.screenshot-img').forEach(img => {
+            const siteId = img.getAttribute('data-site-id');
+            if (siteId) {
+                // Vérifier si l'image est déjà chargée (plusieurs méthodes)
+                if (isImageLoaded(img)) {
+                    showImage(img, siteId);
+                } else {
+                    // Attacher un gestionnaire onload si pas déjà fait
+                    if (!img.hasAttribute('data-initialized')) {
+                        img.setAttribute('data-initialized', 'true');
+                        
+                        // Gestionnaire onload
+                        img.addEventListener('load', function() {
+                            showImage(this, this.getAttribute('data-site-id'));
+                        });
+                        
+                        // Gestionnaire onerror
+                        img.addEventListener('error', function() {
+                            console.error('Erreur chargement vignette:', this.src);
+                            const retries = parseInt(this.getAttribute('data-retries') || '0');
+                            if (retries < 3) {
+                                this.setAttribute('data-retries', (retries + 1).toString());
+                                this.src = '/api/screenshot?url=' + encodeURIComponent(this.getAttribute('data-url')) + '&t=' + Date.now() + '&nocache=1';
+                            }
+                        });
+                    }
+                    
+                    // Vérifier périodiquement si l'image est chargée (pour les images en cache)
+                    setTimeout(() => {
+                        if (isImageLoaded(img) && img.getAttribute('data-shown') !== 'true') {
+                            showImage(img, siteId);
+                        }
+                    }, 100);
+                }
+            }
+        });
+    }
+    
+    // Initialiser au chargement de la page
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeScreenshots);
+    } else {
+        initializeScreenshots();
+    }
+    
+    // Réinitialiser après plusieurs délais pour les images qui se chargent lentement
+    setTimeout(initializeScreenshots, 500);
+    setTimeout(initializeScreenshots, 1000);
+    setTimeout(initializeScreenshots, 2000);
+    
+    // Observer pour les nouvelles images ajoutées dynamiquement
+    const observer = new MutationObserver(() => {
+        initializeScreenshots();
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+<?php $this->stop() ?>
+

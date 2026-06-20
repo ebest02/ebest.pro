@@ -1,0 +1,111 @@
+<?php $this->layout('layout::default', ['title' => 'Scripts - ebest.pro']) ?>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card bg-primary shadow-soft border-light h-100">
+            <div class="card-header">
+                <h3 class="h6 mb-0">Scripts disponibles</h3>
+            </div>
+            <div class="card-body p-0">
+                <?php if (empty($scripts)): ?>
+                    <p class="p-3 mb-0">Aucun script trouvé dans <code>data/scripts</code>.</p>
+                <?php else: ?>
+                    <ul class="list-group list-group-flush">
+                        <?php foreach ($scripts as $name => $path): ?>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a href="/scripts?file=<?=urlencode($name)?>">
+                                    <?=$this->e($name)?>
+                                </a>
+                                <?php if ($selectedFileName === $name): ?>
+                                    <span class="badge badge-success badge-pill">ouvert</span>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8 mb-4">
+        <div class="card bg-primary shadow-soft border-light h-100">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h3 class="h6 mb-0">
+                        <?php if ($selectedFileName): ?>
+                            Script : <?=$this->e($selectedFileName)?>
+                        <?php else: ?>
+                            Aucun script sélectionné
+                        <?php endif; ?>
+                    </h3>
+                </div>
+                <?php if ($selectedFileName): ?>
+                    <?php $githubUrl = rtrim($githubBaseUrl, '/') . '/' . rawurlencode($selectedFileName); ?>
+                    <div class="btn-group btn-group-sm mt-2 mt-md-0" role="group">
+                        <button id="copy-script-btn" type="button" class="btn btn-secondary" title="Copier le script">
+                            <span class="far fa-copy mr-1"></span> Copier
+                        </button>
+                        <a href="<?=$this->e($githubUrl)?>" class="btn btn-primary" target="_blank" rel="noopener" title="Voir sur GitHub / Fork">
+                            <span class="fab fa-github mr-1"></span> GitHub / Fork
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="card-body" style="max-height: 70vh; overflow: auto;">
+                <?php if ($scriptContent !== null): ?>
+                    <pre id="script-content" class="mb-0"><code><?=htmlspecialchars($scriptContent, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')?></code></pre>
+                <?php elseif ($selectedFileName): ?>
+                    <p>Impossible de lire le script sélectionné.</p>
+                <?php else: ?>
+                    <p>Sélectionnez un script dans la liste pour l'afficher, le copier ou ouvrir le lien GitHub.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php $this->start('javascript'); ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var copyBtn = document.getElementById('copy-script-btn');
+    var codeEl  = document.getElementById('script-content');
+
+    if (copyBtn && codeEl) {
+        copyBtn.addEventListener('click', function () {
+            var text = codeEl.innerText || codeEl.textContent || '';
+            if (!text) return;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () {
+                    copyBtn.classList.add('btn-success');
+                    copyBtn.classList.remove('btn-secondary');
+                    copyBtn.innerHTML = '<span class="far fa-check-circle mr-1"></span> Copié !';
+                    setTimeout(function () {
+                        copyBtn.classList.remove('btn-success');
+                        copyBtn.classList.add('btn-secondary');
+                        copyBtn.innerHTML = '<span class="far fa-copy mr-1"></span> Copier';
+                    }, 2000);
+                }).catch(function () {
+                    alert('Impossible de copier automatiquement.');
+                });
+            } else {
+                var textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('Script copié.');
+                } catch (e) {
+                    alert('Impossible de copier.');
+                } finally {
+                    document.body.removeChild(textarea);
+                }
+            }
+        });
+    }
+});
+</script>
+<?php $this->stop(); ?>

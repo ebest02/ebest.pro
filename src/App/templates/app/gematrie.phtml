@@ -1,0 +1,496 @@
+<?php $this->layout('layout::default', ['title' => 'Gematrie', 'bodyClass' => 'gematrie-page']) ?>
+
+<?php $this->start('stylesheets') ?>
+<style>
+    /* Page gématrie : plein écran, pas de bande blanche */
+    body.gematrie-page { overflow: hidden; background: #030006 !important; padding-top: 70px; }
+    body.gematrie-page .section.section-lg { padding: 0; min-height: 0; background: transparent !important; }
+    body.gematrie-page .section.section-lg .container { padding: 0; max-width: none; background: transparent !important; min-height: calc(100vh - 70px); }
+    #gematrie-viewport { position: fixed; inset: 0; top: 70px; z-index: 0; background: #030006; }
+    #gematrie-viewport canvas { display: block; }
+    body.gematrie-page main { position: relative; z-index: 1; }
+
+    /* ── Overlay HTML ─────────────────────────────────── */
+    #ui {
+      position: absolute; inset: 0; pointer-events: none;
+      font-family: 'Courier New', Courier, monospace;
+      line-height: 1.75;
+    }
+    .panel {
+      position: absolute;
+      opacity: 0;
+      animation: fadeIn 4s ease forwards;
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    .panel-tl { top: 28px; left: 28px; }
+    .panel-tr { top: 28px; right: 28px; text-align: right; }
+    .panel-bl { bottom: 28px; left: 28px; }
+    .panel-br { bottom: 28px; right: 28px; text-align: right; }
+
+    .label {
+      font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+      color: rgba(160, 130, 255, 0.50); margin-bottom: 8px;
+    }
+    .name {
+      font-size: 12px; color: rgba(230, 225, 255, 0.75);
+      letter-spacing: 2px; margin-bottom: 10px;
+    }
+    .calc { font-size: 10.5px; color: rgba(175, 155, 255, 0.55); }
+    .hi   { color: rgba(201, 168,  76, 0.80); }
+    .sep  { border: none; border-top: 1px solid rgba(140, 90, 255, 0.18); margin: 9px 0; }
+    .r7   { font-size: 20px; font-weight: bold;
+            color: rgba(255, 215, 0, 0.95);
+            text-shadow: 0 0 18px rgba(255, 200, 0, 0.6); }
+    .n72  { color: rgba(201, 168,  76, 0.85); font-size: 12px; }
+    .n106 { color: rgba(120,   0, 255, 0.85); font-size: 12px; }
+    .n9   { color: rgba(  0, 229, 255, 0.85); font-size: 12px; }
+    .lv   { display: inline-block; width: 52px;
+            font-size: 10px; color: rgba(190, 170, 255, 0.50); }
+    .lv span { color: rgba(201, 168, 76, 0.72); }
+</style>
+<?php $this->stop() ?>
+
+<!-- Wrapper plein écran (sous la navbar) : canvas + overlay -->
+<div id="gematrie-viewport">
+<!-- ════════════════════════════════════════════════════
+     OVERLAY — annotations gématriques
+     ════════════════════════════════════════════════════ -->
+<div id="ui">
+
+  <!-- Haut gauche : réduction gématrique -->
+  <div class="panel panel-tl" style="animation-delay:1.2s">
+    <div class="label">Gématrie · réduction numérologique</div>
+    <div class="name">ETIENNE BROUZES</div>
+    <div class="calc">
+      E<span class="hi">5</span> + T<span class="hi">20</span>
+      + I<span class="hi">9</span> + E<span class="hi">5</span>
+      + N<span class="hi">14</span> + N<span class="hi">14</span>
+      + E<span class="hi">5</span> = <span class="n72">72</span>
+    </div>
+    <div class="calc" style="margin-top:3px">
+      B<span class="hi">2</span> + R<span class="hi">18</span>
+      + O<span class="hi">15</span> + U<span class="hi">21</span>
+      + Z<span class="hi">26</span> + E<span class="hi">5</span>
+      + S<span class="hi">19</span> = <span class="n106">106</span>
+    </div>
+    <hr class="sep">
+    <div class="calc">
+      <span class="n72">72</span> + <span class="n106">106</span>
+      = <span class="hi">178</span>
+      &rarr; 1+7+8 = <span class="hi">16</span>
+      &rarr; 1+6 = <span class="r7">7</span>
+    </div>
+  </div>
+
+  <!-- Haut droit : valeurs individuelles -->
+  <div class="panel panel-tr" style="animation-delay:1.8s">
+    <div class="label">Valeurs numériques</div>
+    <div><span class="lv">E : <span>5</span></span><span class="lv">T : <span>20</span></span></div>
+    <div><span class="lv">I : <span>9</span></span><span class="lv">E : <span>5</span></span></div>
+    <div><span class="lv">N : <span>14</span></span><span class="lv">N : <span>14</span></span></div>
+    <div style="margin-bottom:7px"><span class="lv">E : <span>5</span></span></div>
+    <div><span class="lv">B : <span>2</span></span><span class="lv">R : <span>18</span></span></div>
+    <div><span class="lv">O : <span>15</span></span><span class="lv">U : <span>21</span></span></div>
+    <div><span class="lv">Z : <span>26</span></span><span class="lv">E : <span>5</span></span></div>
+    <div><span class="lv">S : <span>19</span></span></div>
+  </div>
+
+  <!-- Bas gauche : chemin de vie -->
+  <div class="panel panel-bl" style="animation-delay:2.4s">
+    <div class="label">Chemin de vie · date de naissance</div>
+    <div class="calc">
+      0<span class="hi">2</span> · 1<span class="hi">1</span>
+      · <span class="hi">1974</span>
+    </div>
+    <div class="calc">
+      0+2 + 1+1 + 1+9+7+4
+      = <span class="hi">25</span>
+      &rarr; 2+5 = <span class="r7">7</span>
+    </div>
+  </div>
+
+  <!-- Bas droit : légende des nombres -->
+  <div class="panel panel-br" style="animation-delay:3s">
+    <div class="label">Nombres structurels</div>
+    <div class="calc" style="margin-bottom:5px">
+      <span class="r7" style="font-size:14px">7</span>
+      &nbsp; Nombre maître · axe central
+    </div>
+    <div class="calc" style="margin-bottom:5px">
+      <span class="n72">72</span>
+      &nbsp; Constellation · ETIENNE
+    </div>
+    <div class="calc" style="margin-bottom:5px">
+      <span class="n106">106</span>
+      &nbsp; Pulsation · BROUZES
+    </div>
+    <div class="calc">
+      <span class="n9">9</span>
+      &nbsp;&nbsp; Satellite · 7+2 = <span class="n9">9</span>
+    </div>
+  </div>
+
+</div><!-- /ui -->
+</div><!-- /gematrie-viewport -->
+
+<!-- ════════════════════════════════════════════════════
+     SCRIPT THREE.JS
+     ════════════════════════════════════════════════════ -->
+<script type="importmap">
+{
+  "imports": {
+    "three":         "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE          from 'three';
+import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { AfterimagePass }  from 'three/addons/postprocessing/AfterimagePass.js';
+import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
+
+/* ── Générateur pseudo-aléatoire déterministe (évite le scintillement) ── */
+function srng(seed) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return (h >>> 0) / 0xffffffff;
+}
+
+/* ═══════════════════════════════════════════════
+   RENDERER + SCÈNE
+   ═══════════════════════════════════════════════ */
+const viewportEl = document.getElementById('gematrie-viewport');
+const getViewportSize = () => ({ w: viewportEl.clientWidth, h: viewportEl.clientHeight });
+const { w: vpW, h: vpH } = getViewportSize();
+
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(vpW, vpH);
+renderer.setClearColor(0x030006);
+viewportEl.insertBefore(renderer.domElement, document.getElementById('ui'));
+
+let AR = vpW / vpH;
+const cam   = new THREE.OrthographicCamera(-AR, AR, 1, -1, -10, 10);
+const scene = new THREE.Scene();
+const VS    = `varying vec2 vUV; void main(){ vUV=uv; gl_Position=vec4(position,1.0); }`;
+
+/* ═══════════════════════════════════════════════
+   1. CHAMP QUANTIQUE (fond, violet pulsant)
+   ═══════════════════════════════════════════════ */
+const qfMat = new THREE.ShaderMaterial({
+  uniforms: { uTime: { value: 0 }, uAR: { value: AR } },
+  vertexShader: VS,
+  fragmentShader: `
+    varying vec2 vUV; uniform float uTime, uAR;
+    void main(){
+      vec2 uv=vUV*2.-1.; uv.x*=uAR;
+      float r=length(uv), a=atan(uv.y,uv.x);
+      float f=(sin(r*12.24-uTime*2.)+sin((uv.x+uv.y)*9.-uTime*1.3)+sin(a*7.+r*4.-uTime*.7)*.4)
+              *exp(-r*1.5)*(.8+.2*(sin(uTime*2.)*.5+.5));
+      vec3 col=vec3(.02,.01,.09)+vec3(.40,.03,.70)*max(0.,f)
+              +vec3(.03,.18,.55)*max(0.,-f)
+              +vec3(.55,.25,.80)*f*f*exp(-r*1.5)*.5
+              +vec3(.14,.03,.28)*exp(-r*3.5);
+      col*=1.-smoothstep(.7,1.3,r); col=col/(col+.8);
+      gl_FragColor=vec4(col*.28,1.);
+    }`,
+  depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
+});
+const qfMesh = new THREE.Mesh(new THREE.PlaneGeometry(2*AR,2), qfMat);
+qfMesh.renderOrder = 1; scene.add(qfMesh);
+
+/* ═══════════════════════════════════════════════
+   3. LORENZ TRAIL (742 = 7 × 106)
+   ═══════════════════════════════════════════════ */
+const TRAIL = 742;
+const lz    = { x:0.1, y:0, z:0 };
+const tpts  = Array.from({length:TRAIL}, ()=>new THREE.Vector3());
+const tgeo  = new THREE.BufferGeometry().setFromPoints(tpts);
+const tcols = new Float32Array(TRAIL*3);
+for(let i=0;i<TRAIL;i++){
+  const t=i/TRAIL;
+  tcols[i*3]=.15+t*.5; tcols[i*3+1]=.03+t*.1; tcols[i*3+2]=.4+t*.45;
+}
+tgeo.setAttribute('color', new THREE.BufferAttribute(tcols,3));
+const tline = new THREE.Line(tgeo, new THREE.LineBasicMaterial({
+  vertexColors:true, blending:THREE.AdditiveBlending, transparent:true, opacity:.65, depthWrite:false, depthTest:false
+}));
+tline.renderOrder=2; scene.add(tline);
+let thead=0;
+function stepLorenz(){
+  for(let i=0;i<3;i++){
+    const{x,y,z}=lz;
+    lz.x+=10*(y-x)*.005; lz.y+=(x*(28-z)-y)*.005; lz.z+=(x*y-2.667*z)*.005;
+    tpts[thead].set(lz.x/25*AR, lz.y/25, (lz.z-25)/35);
+    thead=(thead+1)%TRAIL;
+  }
+  const p=tgeo.attributes.position;
+  for(let i=0;i<TRAIL;i++){const idx=(thead+i)%TRAIL;p.setXYZ(i,tpts[idx].x,tpts[idx].y,tpts[idx].z);}
+  p.needsUpdate=true;
+}
+
+/* ═══════════════════════════════════════════════
+   4. CANVAS ANIMÉ — lettres, gématrie, symboles
+   ═══════════════════════════════════════════════ */
+const CW=1920, CH=1080;
+const lc  = document.createElement('canvas');
+lc.width  = CW; lc.height = CH;
+const ctx = lc.getContext('2d');
+const ltex = new THREE.CanvasTexture(lc);
+const lmesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(2*AR,2),
+  new THREE.MeshBasicMaterial({ map:ltex, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false, transparent:true })
+);
+lmesh.renderOrder=3; scene.add(lmesh);
+
+/* -- Couleurs par lettre ------------------------------------------------ */
+const COL = {
+  E:'#d0c0ff', T:'#c9a84c', I:'#00e5ff', N:'#b090ff',
+  B:'#9900ff', R:'#bb60ff', O:'#8830ee', U:'#d4a84c',
+  Z:'#ff00cc', S:'#00e5ff',
+  D:'#c9a84c'  // chiffres de la date
+};
+
+/* -- Créateur d'entité lettre ------------------------------------------- */
+function mkE(char, value, color, cx, cy, size, alpha, dOff) {
+  const k = char+cx+cy;
+  return {
+    char, value, color, cx, cy, size, alpha, dOff,
+    freqX: srng('fx'+k)*.16+.04,   freqY: srng('fy'+k)*.11+.03,
+    phX:   srng('px'+k)*Math.PI*2, phY:   srng('py'+k)*Math.PI*2,
+    ampX:  srng('ax'+k)*85+25,     ampY:  srng('ay'+k)*50+18,
+    dSpd:  srng('ds'+k)*.014+.007,
+    pts: Array.from({length:42},(_,i)=>({
+      angle:   (i/42)*Math.PI*2 + srng('a'+i+k)*.35,
+      maxDist: size*(0.9 + srng('d'+i+k)*1.6),
+      pSize:   1.5 + srng('s'+i+k)*2.8,
+    })),
+  };
+}
+
+/* -- Entités : 3 couches de profondeur ---------------------------------- */
+const entities = [
+  mkE('E',5, COL.E, 280, 370, 68, .82, 0.0),
+  mkE('T',20,COL.T, 450, 290, 68, .82, 1.3),
+  mkE('I',9, COL.I, 620, 430, 68, .82, 2.6),
+  mkE('E',5, COL.E, 790, 310, 68, .82, 3.9),
+  mkE('N',14,COL.N, 960, 390, 68, .82, 5.2),
+  mkE('N',14,COL.N,1130, 295, 68, .82, 6.5),
+  mkE('E',5, COL.E,1300, 370, 68, .82, 7.8),
+  mkE('B',2, COL.B, 360, 710, 68, .82, 0.8),
+  mkE('R',18,COL.R, 540, 770, 68, .82, 2.2),
+  mkE('O',15,COL.O, 715, 690, 68, .82, 3.5),
+  mkE('U',21,COL.U, 890, 750, 68, .82, 4.8),
+  mkE('Z',26,COL.Z,1065, 670, 68, .82, 6.1),
+  mkE('E',5, COL.E,1235, 730, 68, .82, 7.4),
+  mkE('S',19,COL.S,1410, 660, 68, .82, 8.7),
+  mkE('E',5, COL.E, 160, 540,130, .22, 1.5),
+  mkE('T',20,COL.T, 570, 155,125, .19, 3.1),
+  mkE('I',9, COL.I, 990, 500,115, .21, 4.6),
+  mkE('E',5, COL.E,1440, 200,130, .19, 6.2),
+  mkE('N',14,COL.N, 370, 870,118, .20, 7.8),
+  mkE('B',2, COL.B, 790, 900,130, .22, 2.1),
+  mkE('R',18,COL.R,1200, 840,115, .20, 4.2),
+  mkE('Z',26,COL.Z,1610, 780,130, .21, 6.7),
+  mkE('S',19,COL.S, 145, 145,118, .19, 9.2),
+  mkE('E',5, COL.E, 960, 540,310, .055,2.5),
+  mkE('B',2, COL.B, 480, 540,270, .050,5.0),
+  mkE('N',14,COL.N,1440, 540,275, .050,7.5),
+  mkE('T',20,COL.T, 960, 200,250, .045,4.0),
+  mkE('Z',26,COL.Z, 960, 880,260, .045,6.0),
+];
+
+/* -- Date 02-11-1974 en spirale logarithmique --------------------------- */
+const DATE_CHARS = ['0','2','1','1','1','9','7','4'];
+const dateEnts = DATE_CHARS.map((d,i)=>{
+  const angle = (i/DATE_CHARS.length)*Math.PI*2 - Math.PI/2;
+  const r = 230 + i*20;
+  return mkE(d, parseInt(d)||0, COL.D,
+    CW/2 + Math.cos(angle)*r,
+    CH/2 + Math.sin(angle)*r,
+    40, 0.58, i*0.9
+  );
+});
+
+/* -- Calcul du facteur de dissolution ----------------------------------- */
+function dissolveFactor(ent, time) {
+  const t  = time * ent.dSpd + ent.dOff;
+  const v  = (Math.sin(t)*0.55 + Math.sin(t*1.73)*0.45)*0.5 + 0.5;
+  return v > 0.72 ? (v - 0.72) / 0.28 : 0;
+}
+
+/* -- Position animée ---------------------------------------------------- */
+function animPos(ent, time) {
+  return {
+    x: ent.cx + Math.sin(time*ent.freqX + ent.phX)*ent.ampX,
+    y: ent.cy + Math.cos(time*ent.freqY + ent.phY)*ent.ampY,
+  };
+}
+
+/* -- Dessin d'une entité (lettre ou chiffre) ---------------------------- */
+function drawEnt(ent, time, dissolve) {
+  const {x, y} = animPos(ent, time);
+  const alpha   = ent.alpha * (1 - dissolve * 0.85);
+
+  if (dissolve < 0.45) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(dissolve * 0.25);
+    ctx.globalAlpha  = alpha;
+    ctx.fillStyle    = ent.color;
+    ctx.font         = `bold ${ent.size}px 'Courier New', monospace`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    if (ent.alpha > 0.5) {
+      ctx.shadowColor = ent.color;
+      ctx.shadowBlur  = 14;
+    }
+    ctx.fillText(ent.char, 0, 0);
+    if (ent.alpha > 0.70) {
+      ctx.globalAlpha = alpha * 0.18;
+      ctx.shadowBlur  = 0;
+      ctx.fillText(ent.char, 3, 2);
+      ctx.fillStyle   = '#ffffff';
+      ctx.globalAlpha = alpha * 0.08;
+      ctx.fillText(ent.char, -2, -1);
+    }
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    if (ent.alpha > 0.70 && dissolve < 0.15) {
+      ctx.save();
+      ctx.globalAlpha  = ent.alpha * 0.55 * (1 - dissolve/0.15);
+      ctx.fillStyle    = '#c9a84c';
+      ctx.font         = '10px monospace';
+      ctx.textAlign    = 'center';
+      ctx.fillText(`${ent.char}:${ent.value}`, x, y + ent.size*0.72);
+      ctx.restore();
+    }
+
+  } else {
+    const scatter = (dissolve - 0.45) / 0.55;
+    ctx.save();
+    ctx.fillStyle   = ent.color;
+    ctx.globalAlpha = ent.alpha * (1 - scatter) * 0.75;
+    ctx.beginPath();
+    ent.pts.forEach(p => {
+      const dist = p.maxDist * scatter;
+      const dx   = Math.cos(p.angle + time*0.18) * dist;
+      const dy   = Math.sin(p.angle + time*0.13) * dist;
+      ctx.moveTo(x+dx+p.pSize, y+dy);
+      ctx.arc(x+dx, y+dy, p.pSize, 0, Math.PI*2);
+    });
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* -- Rendu complet du canvas ------------------------------------------- */
+function drawCanvas(time) {
+  ctx.fillStyle = 'rgba(3,0,6,0.22)';
+  ctx.fillRect(0, 0, CW, CH);
+
+  ctx.save();
+  const cRot = time * 0.038;
+  for (let i = 0; i < 72; i++) {
+    const a   = (i/72)*Math.PI*2 + cRot;
+    const row = Math.floor(i/12);
+    const r   = 265 + row*58;
+    const px  = CW/2 + Math.cos(a)*r;
+    const py  = CH/2 + Math.sin(a)*r;
+    const pls = 0.5 + 0.5*Math.sin(time*1.6 + i*0.43);
+    ctx.beginPath(); ctx.arc(px, py, 1.6+pls*1.1, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(201,168,76,${0.12 + pls*0.22})`; ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.save();
+  const r106 = 172 + Math.sin(time*1.75)*28;
+  const a106 = 0.07 + Math.sin(time*1.75)*0.05;
+  ctx.beginPath(); ctx.arc(CW/2, CH/2, r106, 0, Math.PI*2);
+  ctx.strokeStyle = `rgba(120,0,255,${a106})`; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(CW/2, CH/2, r106*1.35, 0, Math.PI*2);
+  ctx.strokeStyle = `rgba(80,0,200,${a106*0.4})`; ctx.lineWidth=1; ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(CW/2, CH/2);
+  for (let i = 0; i < 7; i++) {
+    const a   = (i/7)*Math.PI*2 + time*0.028;
+    const len = 295 + Math.sin(time*0.65+i)*42;
+    const alf = 0.10 + Math.sin(time*0.45+i*.9)*0.04;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*len, Math.sin(a)*len);
+    ctx.strokeStyle=`rgba(255,210,0,${alf})`; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  const g7 = 0.55 + Math.sin(time*0.75)*0.18;
+  ctx.font = 'bold 210px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.shadowColor='rgba(255,190,0,0.85)'; ctx.shadowBlur=65;
+  ctx.fillStyle=`rgba(255,215,0,${g7*0.13})`; ctx.fillText('7',0,0);
+  ctx.shadowBlur=0;
+  ctx.font='bold 22px monospace'; ctx.fillStyle=`rgba(201,168,76,${0.14+Math.sin(time*.5)*.04})`;
+  ctx.fillText('72', 0, -155);
+  ctx.font='12px monospace';     ctx.fillStyle=`rgba(201,168,76,0.22)`;
+  ctx.fillText('ETIENNE = 72', 0, -133);
+  const p106 = 0.38 + Math.sin(time*1.75)*0.12;
+  ctx.font=`bold ${22+Math.sin(time*1.75)*3}px monospace`;
+  ctx.fillStyle=`rgba(120,0,255,${p106})`; ctx.shadowColor='rgba(100,0,255,.7)'; ctx.shadowBlur=10;
+  ctx.fillText('106', 0, 155);
+  ctx.shadowBlur=0; ctx.font='11px monospace'; ctx.fillStyle=`rgba(100,0,220,${p106*.65})`;
+  ctx.fillText('BROUZES = 106', 0, 173);
+  ctx.restore();
+
+  ctx.save();
+  const a9=time*.38, r9=375;
+  const x9=CW/2+Math.cos(a9)*r9, y9=CH/2+Math.sin(a9)*r9;
+  const alp9 = 0.5+Math.sin(time*.9)*.18;
+  ctx.font='bold 44px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle=`rgba(0,229,255,${alp9})`; ctx.shadowColor='rgba(0,229,255,.6)'; ctx.shadowBlur=14;
+  ctx.fillText('9', x9, y9); ctx.shadowBlur=0;
+  ctx.font='9px monospace'; ctx.fillStyle=`rgba(0,200,255,${alp9*.55})`;
+  ctx.fillText('7+2', x9, y9+28); ctx.restore();
+
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(CW/2, CH/2); ctx.lineTo(x9, y9);
+  ctx.strokeStyle=`rgba(0,229,255,0.06)`; ctx.lineWidth=1; ctx.stroke(); ctx.restore();
+
+  dateEnts.forEach(e => drawEnt(e, time, dissolveFactor(e, time)));
+  entities.forEach(e => drawEnt(e, time, dissolveFactor(e, time)));
+
+  ltex.needsUpdate = true;
+}
+
+/* ═══════════════════════════════════════════════
+   5. POST-PROCESSING
+   ═══════════════════════════════════════════════ */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, cam));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(vpW, vpH), 1.25, 0.85, 0.28));
+composer.addPass(new AfterimagePass(0.83));
+composer.addPass(new OutputPass());
+
+window.addEventListener('resize', () => {
+  const { w, h } = getViewportSize(); AR = w/h;
+  renderer.setSize(w,h); composer.setSize(w,h);
+  composer.setPixelRatio(renderer.getPixelRatio());
+  cam.left=-AR; cam.right=AR; cam.updateProjectionMatrix();
+  qfMat.uniforms.uAR.value=AR;
+  [qfMesh, lmesh].forEach(m => {
+    m.geometry.dispose(); m.geometry = new THREE.PlaneGeometry(2*AR,2);
+  });
+});
+
+const clock = new THREE.Clock();
+(function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  qfMat.uniforms.uTime.value      = t;
+  stepLorenz();
+  tline.rotation.z = Math.sin(t * 0.038) * 0.12;
+  drawCanvas(t);
+  composer.render();
+})();
+</script>

@@ -1,0 +1,462 @@
+<?php $this->layout('layout::default', ['title' => 'Palindromes']) ?>
+
+<?php $this->start('stylesheets') ?>
+<style>
+/* Boutons lisibles sur fond clair (page Palindromes) */
+.palindromes-form-card .btn-outline-primary,
+.palindromes-form-card .btn-outline-secondary {
+    color: #31344b;
+    border-color: #5a5d72;
+}
+.palindromes-form-card .btn-outline-primary:hover,
+.palindromes-form-card .btn-outline-primary:focus,
+.palindromes-form-card .btn-outline-secondary:hover,
+.palindromes-form-card .btn-outline-secondary:focus {
+    color: #fff;
+    background-color: #5a5d72;
+    border-color: #5a5d72;
+}
+/* Boutons de la liste à droite (Voir tout, tri) */
+.palindromes-list-card .btn-outline-light {
+    color: #31344b;
+    border-color: #5a5d72;
+}
+.palindromes-list-card .btn-outline-light:hover,
+.palindromes-list-card .btn-outline-light:focus {
+    color: #fff;
+    background-color: #5a5d72;
+    border-color: #5a5d72;
+}
+/* Cases à cocher toujours visibles (cochées = fond sombre + coche blanche) */
+.palindromes-form-card .custom-checkbox .custom-control-label::before {
+    border-radius: 0.25rem;
+}
+.palindromes-form-card .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #31344b !important;
+    border-color: #31344b !important;
+}
+.palindromes-form-card .custom-checkbox .custom-control-input:checked ~ .custom-control-label::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e") !important;
+}
+/* Titre de la liste de palindromes : plus gros et plus d'espace */
+.palindromes-list-card .card-header {
+    padding: 1rem 1.25rem 1.25rem;
+}
+.palindromes-list-card .palindromes-list-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+}
+/* Alternance de fond pour faciliter la lecture */
+.palindromes-list-card .card-body ul li {
+    padding: 0.2rem 0.4rem;
+    margin: 0 -0.4rem;
+    border-radius: 0.2rem;
+}
+.palindromes-list-card .card-body ul li:nth-child(odd) {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+.palindromes-list-card .card-body ul li:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+/* Conteneur et animation 3D (rotation des colonnes) */
+.palindromes-3d-container {
+    position: relative;
+    width: 100%;
+    overflow: visible;
+    perspective: 1200px;
+    min-height: 200px;
+}
+.palindromes-3d-container .css2d-wrapper {
+    transform-style: preserve-3d;
+}
+.palindromes-3d-container .css2d-wrapper .col {
+    transform-style: preserve-3d;
+    animation: palindromes-col-rotate 22s linear infinite;
+}
+.palindromes-3d-container .css2d-wrapper .col:nth-child(1) { animation-delay: 0s; }
+.palindromes-3d-container .css2d-wrapper .col:nth-child(2) { animation-delay: -5.5s; }
+.palindromes-3d-container .css2d-wrapper .col:nth-child(3) { animation-delay: -11s; }
+.palindromes-3d-container .css2d-wrapper .col:nth-child(4) { animation-delay: -16.5s; }
+@keyframes palindromes-col-rotate {
+    from { transform: rotateY(0deg); }
+    to   { transform: rotateY(360deg); }
+}
+/* Pause : arrêter l'animation et réinitialiser les colonnes en position normale */
+.palindromes-3d-container.palindromes-anim-paused .css2d-wrapper .col {
+    animation-play-state: paused;
+    transform: rotateY(0deg);
+}
+/* Overlay + spinner pendant la génération */
+.palindromes-generating-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+.palindromes-generating-overlay.is-active {
+    display: flex;
+}
+.palindromes-generating-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: palindromes-spin 0.8s linear infinite;
+}
+.palindromes-generating-text {
+    color: #fff;
+    margin-top: 1rem;
+    font-size: 1.1rem;
+}
+@keyframes palindromes-spin {
+    to { transform: rotate(360deg); }
+}
+/* Réponses du générateur et de la recherche : tailles et couleurs distinctes, violet pour ressortir */
+.palindromes-result-highlight {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #b39ddb;
+}
+.palindromes-result-highlight.text-success {
+    color: #c5e1a5;
+}
+.palindromes-result-highlight.text-warning {
+    color: #ffab91;
+}
+/* Ligne du type "X résultat(s) pour « … »" : plus petite, violet soutenu, gras */
+.palindromes-search-count {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #b39ddb;
+}
+/* Liste des palindromes trouvés (recherche) : plus gros, violet soutenu, gras, toute la largeur sans scroll */
+.palindromes-search-results-list {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #9575cd;
+}
+.palindromes-search-results-list li {
+    color: #9575cd;
+    font-weight: 700;
+}
+.palindromes-search-results-full {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+}
+.palindromes-search-results-full li {
+    flex: 0 0 auto;
+}
+.palindromes-search-results-full li::after {
+    content: " · ";
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 400;
+}
+.palindromes-search-results-full li:last-child::after {
+    content: "";
+}
+/* Message vérification "présent" : vert lisible, gras */
+.palindromes-verify-ok {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #a5d6a7;
+}
+/* Message vérification "absent" : orange/terracotta lisible, gras */
+.palindromes-verify-ko {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #ffab91;
+}
+/* Encart palindrome long mis en avant : très gros, violet voyant */
+.palindromes-featured-long {
+    font-size: clamp(1.25rem, 4vw, 2rem);
+    font-weight: 700;
+    color: #7e57c2;
+    line-height: 1.35;
+    text-align: center;
+}
+@media (min-width: 768px) {
+    .palindromes-featured-long {
+        font-size: clamp(1.5rem, 3vw, 2.25rem);
+    }
+}
+</style>
+<?php $this->stop() ?>
+
+<?php
+$palindromes = $palindromes ?? [];
+$form = $form ?? ['nb_mots' => 5, 'verbes' => false, 'adjectifs' => false, 'pronoms' => false, 'noms' => false];
+$generated = $generated ?? null;
+$generated_message = $generated_message ?? null;
+$generated_list = $generated_list ?? [];
+$sort = $sort ?? 'random';
+$voir_tout = $voir_tout ?? false;
+$longs = $longs ?? false;
+$search_query = $search_query ?? '';
+$search_results = $search_results ?? [];
+$verify_phrase = $verify_phrase ?? '';
+$verify_found = $verify_found ?? null;
+$featured_long_palindrome = $featured_long_palindrome ?? null;
+$refresh_mode = $refresh_mode ?? false;
+
+$baseUrl = '/palindromes';
+$query = static function (array $opts) use ($baseUrl) {
+    $q = http_build_query($opts);
+    return $baseUrl . ($q !== '' ? '?' . $q : '');
+};
+
+// Répartir en 4 colonnes
+$n = count($palindromes);
+$colSize = (int) ceil($n / 4);
+$cols = [
+    array_slice($palindromes, 0, $colSize),
+    array_slice($palindromes, $colSize, $colSize),
+    array_slice($palindromes, 2 * $colSize, $colSize),
+    array_slice($palindromes, 3 * $colSize, $n),
+];
+
+$titleList = $longs
+    ? ($voir_tout ? count($palindromes) . ' palindromes longs' : '150 palindromes longs (tirés au hasard)')
+    : ($voir_tout ? count($palindromes) . ' palindromes' : '150 palindromes (tirés au hasard)');
+?>
+
+<div class="row">
+    <!-- Gauche : générateur de palindrome -->
+    <div class="col-md-4 mb-4">
+        <div class="card bg-primary shadow-soft border-light h-100 palindromes-form-card">
+            <div class="card-header">
+                <h3 class="h4 mb-0">Générateur de palindrome</h3>
+            </div>
+            <div class="card-body position-relative">
+                <div id="palindromes-generating-overlay" class="palindromes-generating-overlay" aria-hidden="true">
+                    <div class="palindromes-generating-spinner" role="status" aria-label="Chargement"></div>
+                    <p class="palindromes-generating-text mb-0">Génération en cours…</p>
+                </div>
+                <form id="palindromes-generate-form" method="post" action="/palindromes">
+                    <input type="hidden" name="sort" value="<?= $this->e($sort) ?>">
+                    <input type="hidden" name="voir_tout" value="<?= $voir_tout ? '1' : '0' ?>">
+                    <input type="hidden" name="longs" value="<?= $longs ? '1' : '0' ?>">
+                    <div class="form-group">
+                        <label for="nb_mots">Nombre de mots</label>
+                        <input type="number" id="nb_mots" name="nb_mots" class="form-control"
+                               min="1" max="20" value="<?= $this->e((string) $form['nb_mots']) ?>">
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="verbes" name="verbes" value="1"
+                                <?= ($form['verbes'] ?? false) ? ' checked' : '' ?>>
+                            <label class="custom-control-label" for="verbes">Verbes</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="adjectifs" name="adjectifs" value="1"
+                                <?= ($form['adjectifs'] ?? false) ? ' checked' : '' ?>>
+                            <label class="custom-control-label" for="adjectifs">Adjectifs</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="pronoms" name="pronoms" value="1"
+                                <?= ($form['pronoms'] ?? false) ? ' checked' : '' ?>>
+                            <label class="custom-control-label" for="pronoms">Pronoms</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="noms" name="noms" value="1"
+                                <?= ($form['noms'] ?? false) ? ' checked' : '' ?>>
+                            <label class="custom-control-label" for="noms">Noms</label>
+                        </div>
+                    </div>
+                    <button type="submit" name="action" value="generate" class="btn btn-primary" id="palindromes-generate-btn">Générer</button>
+                </form>
+                <?php if ($generated !== null && $generated !== ''): ?>
+                    <hr>
+                    <?php if ($generated_message !== null && $generated_message !== ''): ?>
+                        <p class="small text-warning mb-2"><?= $this->e($generated_message) ?></p>
+                    <?php endif; ?>
+                    <p class="mb-0"><strong>Résultat :</strong><br><span class="text-success palindromes-result-highlight"><?= $this->e($generated) ?></span></p>
+                <?php elseif ($generated_message !== null && $generated_message !== ''): ?>
+                    <hr>
+                    <div class="alert alert-warning mb-0 palindromes-result-highlight" role="alert">
+                        <?= $this->e($generated_message) ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($generated_list !== []): ?>
+                    <hr>
+                    <h4 class="h6">Palindromes générés</h4>
+                    <ul class="list-unstyled small mb-2" style="max-height: 200px; overflow-y: auto;">
+                        <?php foreach ($generated_list as $p): ?>
+                            <li><?= $this->e($p) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="/palindromes/export-txt" class="btn btn-outline-primary">Exporter en .txt</a>
+                        <form method="post" action="/palindromes/save" class="d-inline">
+                            <button type="submit" class="btn btn-outline-primary">Sauvegarder</button>
+                        </form>
+                        <a href="<?= $this->e($query(['clear' => '1', 'sort' => $sort, 'voir_tout' => $voir_tout ? '1' : '0', 'longs' => $longs ? '1' : '0'])) ?>" class="btn btn-outline-secondary">Vider la liste</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Droite : encart palindrome long, puis (recherche | titre + filtres), puis liste en 4 colonnes -->
+    <div class="col-md-8 mb-4">
+        <?php if ($featured_long_palindrome !== null && $featured_long_palindrome !== ''): ?>
+        <div class="card bg-primary shadow-soft border-light mb-3">
+            <div class="card-body py-3">
+                <p class="palindromes-featured-long mb-0">&#160;&#171;&#160;<?= $this->e($featured_long_palindrome) ?>&#160;&#187;&#160;</p>
+            </div>
+        </div>
+        <?php endif; ?>
+        <div class="mb-2 text-right small">
+            <a href="<?= $this->e($query(['sort' => $sort, 'voir_tout' => $voir_tout ? '1' : '0', 'longs' => $longs ? '1' : '0', 'refresh' => '1'])) ?>" class="text-muted">Rafraîchir</a>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6 mb-2 mb-md-0">
+                <div class="card bg-primary shadow-soft border-light h-100 palindromes-form-card">
+                    <div class="card-header">
+                        <h3 class="h6 mb-0">Recherche dans notre liste</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" action="<?= $this->e($baseUrl) ?>" class="form-inline flex-wrap mb-3">
+                            <input type="hidden" name="sort" value="<?= $this->e($sort) ?>">
+                            <input type="hidden" name="voir_tout" value="<?= $voir_tout ? '1' : '0' ?>">
+                            <input type="hidden" name="longs" value="<?= $longs ? '1' : '0' ?>">
+                            <?php if ($verify_phrase !== ''): ?>
+                            <input type="hidden" name="verify" value="<?= $this->e($verify_phrase) ?>">
+                            <?php endif; ?>
+                            <label for="palindromes-search" class="mr-2 mb-1">Mots à chercher</label>
+                            <input type="text" id="palindromes-search" name="search" class="form-control form-control-sm mr-2 mb-1" style="min-width: 160px;"
+                                   value="<?= $this->e($search_query) ?>" placeholder="ex. Léon Noël" required>
+                            <button type="submit" class="btn btn-sm btn-primary mb-1">Rechercher</button>
+                        </form>
+                        <?php if ($search_query !== ''): ?>
+                            <p class="palindromes-search-count mb-0"><?= count($search_results) ?> résultat(s) pour « <?= $this->e($search_query) ?> »</p>
+                            <?php if ($search_results === []): ?>
+                                <p class="palindromes-verify-ko mb-0 mt-1">Aucun palindrome ne contient tous ces mots.</p>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        <hr class="my-2">
+                        <form method="get" action="<?= $this->e($baseUrl) ?>" class="form-inline flex-wrap">
+                            <input type="hidden" name="sort" value="<?= $this->e($sort) ?>">
+                            <input type="hidden" name="voir_tout" value="<?= $voir_tout ? '1' : '0' ?>">
+                            <input type="hidden" name="longs" value="<?= $longs ? '1' : '0' ?>">
+                            <?php if ($search_query !== ''): ?>
+                            <input type="hidden" name="search" value="<?= $this->e($search_query) ?>">
+                            <?php endif; ?>
+                            <label for="palindromes-verify" class="mr-2 mb-1">Vérifier si présent</label>
+                            <input type="text" id="palindromes-verify" name="verify" class="form-control form-control-sm mr-2 mb-1" style="min-width: 160px;"
+                                   value="<?= $this->e($verify_phrase) ?>" placeholder="ex. À Laval, elle l'avala." required>
+                            <button type="submit" class="btn btn-sm btn-primary mb-1">Vérifier</button>
+                        </form>
+                        <?php if ($verify_phrase !== ''): ?>
+                            <?php if ($verify_found === true): ?>
+                                <p class="palindromes-verify-ok mb-0 mt-1">Ce palindrome est présent dans notre liste.</p>
+                            <?php elseif ($verify_found === false): ?>
+                                <p class="palindromes-verify-ko mb-0 mt-1">Ce palindrome n'est pas dans notre liste (ou l'orthographe diffère).</p>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-primary shadow-soft border-light h-100 palindromes-list-card">
+                    <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
+                        <h2 class="palindromes-list-title mb-0"><?= $this->e($titleList) ?></h2>
+                        <div class="mt-2 mt-md-0 d-flex flex-wrap align-items-center">
+                            <a href="<?= $this->e($query(['sort' => $sort, 'voir_tout' => $voir_tout ? '0' : '1', 'longs' => $longs ? '1' : '0'])) ?>" class="btn btn-sm mr-2 mb-1 <?= $voir_tout ? 'btn-secondary' : 'btn-outline-light' ?>">
+                                <?= $voir_tout ? '150 au hasard' : 'Voir tout' ?>
+                            </a>
+                            <a href="<?= $this->e($query(['sort' => $sort, 'voir_tout' => $voir_tout ? '1' : '0', 'longs' => $longs ? '0' : '1'])) ?>" class="btn btn-sm mr-2 mb-1 <?= $longs ? 'btn-secondary' : 'btn-outline-light' ?>">
+                                Sélection longs
+                            </a>
+                            <button type="button" id="palindromes-anim-toggle" class="btn btn-sm mr-2 mb-1 btn-outline-light" aria-pressed="false" title="Arrêter ou lancer l'animation">
+                                Arrêter l'animation
+                            </button>
+                            <div class="btn-group btn-group-sm mb-1" role="group">
+                                <a href="<?= $this->e($query(['sort' => 'random', 'voir_tout' => $voir_tout ? '1' : '0', 'longs' => $longs ? '1' : '0'])) ?>" class="btn btn-sm <?= $sort === 'random' ? 'btn-secondary' : 'btn-outline-light' ?>">Aléatoire</a>
+                                <a href="<?= $this->e($query(['sort' => 'alpha', 'voir_tout' => $voir_tout ? '1' : '0', 'longs' => $longs ? '1' : '0'])) ?>" class="btn btn-sm <?= $sort === 'alpha' ? 'btn-secondary' : 'btn-outline-light' ?>">A → Z</a>
+                                <a href="<?= $this->e($query(['sort' => 'alpha_desc', 'voir_tout' => $voir_tout ? '1' : '0', 'longs' => $longs ? '1' : '0'])) ?>" class="btn btn-sm <?= $sort === 'alpha_desc' ? 'btn-secondary' : 'btn-outline-light' ?>">Z → A</a>
+                                <a href="<?= $this->e($query(['sort' => 'length_asc', 'voir_tout' => $voir_tout ? '1' : '0', 'longs' => $longs ? '1' : '0'])) ?>" class="btn btn-sm <?= $sort === 'length_asc' ? 'btn-secondary' : 'btn-outline-light' ?>">Court → Long</a>
+                                <a href="<?= $this->e($query(['sort' => 'length_desc', 'voir_tout' => $voir_tout ? '1' : '0', 'longs' => $longs ? '1' : '0'])) ?>" class="btn btn-sm <?= $sort === 'length_desc' ? 'btn-secondary' : 'btn-outline-light' ?>">Long → Court</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php if ($search_query !== '' && $search_results !== []): ?>
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card bg-primary shadow-soft border-light">
+                    <div class="card-body py-3">
+                        <ul class="list-unstyled palindromes-search-results-list mb-0 palindromes-search-results-full">
+                            <?php foreach ($search_results as $p): ?>
+                                <li><?= $this->e($p) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        <div class="card bg-primary shadow-soft border-light palindromes-list-card">
+            <div class="card-body">
+                <div id="palindromes-3d-container" class="palindromes-3d-container">
+                    <div id="palindromes-3d-wrapper" class="css2d-wrapper">
+                        <div class="row">
+                            <?php foreach ($cols as $col): ?>
+                            <div class="col">
+                                <ul class="list-unstyled mb-0">
+                                    <?php foreach ($col as $p): ?>
+                                        <li><?= $this->e($p) ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var btn = document.getElementById('palindromes-anim-toggle');
+    var container = document.getElementById('palindromes-3d-container');
+    if (btn && container) {
+        btn.addEventListener('click', function() {
+            var paused = container.classList.toggle('palindromes-anim-paused');
+            btn.setAttribute('aria-pressed', paused ? 'true' : 'false');
+            btn.textContent = paused ? 'Lancer l\'animation' : 'Arrêter l\'animation';
+        });
+    }
+    var form = document.getElementById('palindromes-generate-form');
+    var overlay = document.getElementById('palindromes-generating-overlay');
+    var generateBtn = document.getElementById('palindromes-generate-btn');
+    if (form && overlay) {
+        form.addEventListener('submit', function() {
+            if (generateBtn) generateBtn.disabled = true;
+            overlay.classList.add('is-active');
+            overlay.setAttribute('aria-hidden', 'false');
+        });
+    }
+})();
+</script>
+

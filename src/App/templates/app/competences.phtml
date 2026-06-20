@@ -1,0 +1,43 @@
+<?php $this->layout('layout::default', ['title' => 'Compétences - ebest.pro']) ?>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-soft border-light mb-4">
+            <div class="card-body competences-content">
+                <div class="d-flex flex-wrap align-items-center mb-4">
+                    <a href="https://github.com/ebest02" target="_blank" class="btn btn-sm btn-secondary shadow-soft mr-2 mb-2">
+                        <span class="fab fa-github mr-2"></span>
+                        Voir le profil GitHub
+                    </a>
+                    <div class="btn-group mb-2">
+                        <button type="button" class="btn btn-sm btn-outline-success shadow-soft dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Partager
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="mailto:?subject=Profil%20ebest.pro&body=Je%20vous%20partage%20ce%20profil%20:%20https://ebest.pro/competences">
+                                Par e-mail
+                            </a>
+                            <a class="dropdown-item" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Febest.pro%2Fcompetences" target="_blank" rel="noopener">
+                                LinkedIn
+                            </a>
+                            <a class="dropdown-item" href="https://twitter.com/intent/tweet?text=Profil%20ebest.pro&url=https%3A%2F%2Febest.pro%2Fcompetences" target="_blank" rel="noopener">
+                                X / Twitter
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <?= $content ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.competences-content h2 { margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.5rem; }
+.competences-content h2:first-child { margin-top: 0; }
+.competences-content h3 { margin-top: 1.25rem; margin-bottom: 0.5rem; font-size: 1.2rem; }
+.competences-content ul { margin-bottom: 1rem; padding-left: 1.5rem; }
+.competences-content li { margin-bottom: 0.25rem; }
+.competences-content hr { margin: 1.5rem 0; border: 0; border-top: 1px solid rgba(0,0,0,.1); }
+.competences-content p { margin-bottom: 0.75rem; }
+</style>

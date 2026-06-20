@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Palindrome — EVER O REVE</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#04020e; overflow:hidden; font-family:'Courier New',monospace; }
+  canvas { display:block; }
+  #sub {
+    position:fixed; bottom:28px; width:100%; text-align:center;
+    font-size:18px; letter-spacing:10px; color:rgba(230,210,255,.95);
+    text-shadow:0 0 18px rgba(160,80,255,1), 0 0 40px rgba(100,0,255,.5);
+    pointer-events:none; font-weight:600;
+  }
+  #ph {
+    position:fixed; top:24px; width:100%; text-align:center;
+    font-size:11px; letter-spacing:6px; color:rgba(255,255,255,.28);
+    pointer-events:none; text-transform:uppercase;
+  }
+</style>
+</head>
+<body>
+<div id="ph">palindrome</div>
+<div id="sub">
+  <span style="color:#cc88ff">E · V · E · R</span>
+  &nbsp;&nbsp;<span style="color:#ffffff; text-shadow:0 0 24px #fff,0 0 50px #aa66ff,0 0 80px #6600ff">O</span>&nbsp;&nbsp;
+  <span style="color:#cc88ff">R · E · V · E</span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── Scene ────────────────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.fog   = new THREE.FogExp2(0x04020e, 0.009);
+
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 600);
+camera.position.set(0, 8, 28);
+camera.lookAt(0, 4, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+// ─── Lights ───────────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x0a0520, 7));
+
+const sun = new THREE.DirectionalLight(0xddeeff, 0.4);
+sun.position.set(6, 25, 10);
+scene.add(sun);
+
+// Fire lights — violet/white
+const firePL = [-8, 0, 8].map(x => {
+  const pl = new THREE.PointLight(0x8833ff, 0, 35);
+  pl.position.set(x, 5, 0);
+  scene.add(pl);
+  return pl;
+});
+const capPL = new THREE.PointLight(0xcc88ff, 0, 55);
+capPL.position.set(0, 13, 0);
+scene.add(capPL);
+
+// Central glow for the "O" — pure white
+const oPL = new THREE.PointLight(0xffffff, 0, 22);
+oPL.position.set(0, 1, 1);
+scene.add(oPL);
+
+// ─── Ground ───────────────────────────────────────────────────────────────────
+const gndMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(200, 120),
+  new THREE.MeshPhongMaterial({ color:0x06021a, shininess:60, specular:0x220055 })
+);
+gndMesh.rotation.x = -Math.PI/2;
+scene.add(gndMesh);
+// Double grid: coarse violet + fine dark purple
+scene.add(new THREE.GridHelper(200, 20, 0x6600cc, 0x6600cc));
+scene.add(new THREE.GridHelper(200, 80, 0x1a0044, 0x1a0044));
+
+// ─── Stars ────────────────────────────────────────────────────────────────────
+(()=>{
+  const p = new Float32Array(1000*3);
+  for(let i=0;i<1000;i++){
+    p[i*3]   = (Math.random()-.5)*500;
+    p[i*3+1] = 20+Math.random()*220;
+    p[i*3+2] = (Math.random()-.5)*500;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(p,3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({
+    color:0xddccff, size:.32, transparent:true, opacity:.6, sizeAttenuation:true
+  })));
+})();
+
+// ─── Palindrome : EVER O REVE (9 letters) ─────────────────────────────────────
+// E-V-E-R-O-R-E-V-E  center = O (index 4)
+const PALI = ['E','V','E','R','O','R','E','V','E'];
+const N = PALI.length; // 9
+
+function makeLetterTex(ch, idx) {
+  const S = 128;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const ctx = cv.getContext('2d');
+
+  const isCenter = (idx === 4); // the O
+  const dist = Math.abs(idx - 4) / 4; // 0=center, 1=edge
+
+  // Violet/white palette: center=pure white, edges=deep violet
+  const hue = 270;
+  const sat = isCenter ? 0 : 70;
+  const lit = isCenter ? 96 : (18 + (1-dist)*20);
+
+  const r = 20;
+  ctx.fillStyle = `hsl(${hue},${sat}%,${lit}%)`;
+  ctx.beginPath();
+  ctx.moveTo(r,0); ctx.lineTo(S-r,0); ctx.arcTo(S,0,S,r,r);
+  ctx.lineTo(S,S-r); ctx.arcTo(S,S,S-r,S,r);
+  ctx.lineTo(r,S); ctx.arcTo(0,S,0,S-r,r);
+  ctx.lineTo(0,r); ctx.arcTo(0,0,r,0,r); ctx.closePath(); ctx.fill();
+
+  // Inner radial glow
+  const grd = ctx.createRadialGradient(S/2,S/2,0,S/2,S/2,S*.65);
+  if(isCenter) {
+    grd.addColorStop(0,'rgba(255,255,255,0.5)');
+    grd.addColorStop(1,'rgba(180,100,255,0.0)');
+  } else {
+    grd.addColorStop(0,'rgba(180,100,255,0.22)');
+    grd.addColorStop(1,'transparent');
+  }
+  ctx.fillStyle = grd; ctx.fillRect(0,0,S,S);
+
+  // Letter
+  ctx.shadowBlur = isCenter ? 32 : 20;
+  ctx.shadowColor = isCenter ? '#ffffff' : '#bb66ff';
+  ctx.fillStyle   = isCenter ? '#1a1000' : '#fff';
+  ctx.font        = 'bold 72px "Courier New",monospace';
+  ctx.textAlign   = 'center';
+  ctx.textBaseline= 'middle';
+  ctx.fillText(ch, S/2, S/2+3);
+
+  return new THREE.CanvasTexture(cv);
+}
+
+const SP = 2.2; // generous spacing for 9 letters
+const HW = (N-1)*SP/2;
+
+const posA = PALI.map((_,i) => new THREE.Vector3(i*SP - HW, 0.85, 0));
+
+const rng = (a,b) => a+(b-a)*Math.random();
+const posB = PALI.map((_,i) => new THREE.Vector3(
+  posA[i].x + rng(-38,38),
+  rng(10,38),
+  rng(-22,22)
+));
+
+// Mushroom: 3 stem + 6 cap (compact and dramatic)
+const posM = (()=>{
+  const out = [];
+  const nS=3, nC=N-nS;
+
+  // Stem — tight spiral
+  for(let i=0;i<nS;i++){
+    const t=i/(nS-1), ang=t*Math.PI*2.5;
+    out.push(new THREE.Vector3(Math.sin(ang)*.8, 1.5+t*7, Math.cos(ang)*.8));
+  }
+  // Cap — phyllotaxis dome
+  for(let i=0;i<nC;i++){
+    const rf=Math.sqrt((i+.5)/nC), theta=Math.PI*(1+Math.sqrt(5))*i;
+    const R=5.5*rf, y=10+(1-rf*rf)*2.5;
+    out.push(new THREE.Vector3(R*Math.cos(theta), y, R*Math.sin(theta)*.44));
+  }
+  return out;
+})();
+
+// Smoke ring
+const smokeParts = (()=>{
+  const cnt=40, pos=new Float32Array(cnt*3);
+  for(let i=0;i<cnt;i++){
+    const a=(i/cnt)*Math.PI*2, r=5+Math.random()*2;
+    pos[i*3]=Math.cos(a)*r; pos[i*3+1]=10+Math.random()*1.5; pos[i*3+2]=Math.sin(a)*r*.4;
+  }
+  const sg = new THREE.BufferGeometry();
+  sg.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  const sm = new THREE.Points(sg, new THREE.PointsMaterial({
+    color:0xcc88ff, size:1.8, transparent:true, opacity:0,
+    sizeAttenuation:true, depthWrite:false, blending:THREE.AdditiveBlending
+  }));
+  scene.add(sm); return sm;
+})();
+
+// Meshes
+const meshes = PALI.map((ch,i)=>{
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.8, 1.8),
+    new THREE.MeshBasicMaterial({
+      map: makeLetterTex(ch,i), transparent:true, depthWrite:false, side:THREE.DoubleSide
+    })
+  );
+  m.position.copy(posA[i]);
+  scene.add(m);
+  return m;
+});
+
+// ─── FSM ──────────────────────────────────────────────────────────────────────
+const PHASES = ['REST','BLAST','FORM','HOLD','RETURN','SHOW'];
+const DUR    = { REST:4.0, BLAST:2.2, FORM:2.4, HOLD:3.5, RETURN:3.0, SHOW:5.0 };
+const LABELS = { REST:'palindrome', BLAST:'explosion', FORM:'champignon',
+                 HOLD:'champignon', RETURN:'retour', SHOW:'palindrome' };
+let ph=0, pt=0;
+const clock = new THREE.Clock();
+const phDiv = document.getElementById('ph');
+
+const eOut  = t => 1-(1-t)**3;
+const eIO   = t => t<.5 ? 4*t**3 : 1-(-2*t+2)**3/2;
+
+let camY=8, camLookY=4, camAng=0;
+
+function tick(){
+  requestAnimationFrame(tick);
+  const dt   = Math.min(clock.getDelta(), .07);
+  pt        += dt;
+  const name = PHASES[ph];
+  const dur  = DUR[name];
+  const t    = Math.min(pt/dur, 1);
+
+  phDiv.textContent = LABELS[name];
+
+  // ── Letters ──────────────────────────────────────────────────────────────
+  meshes.forEach((m,i)=>{
+    const rp=posA[i], bp=posB[i], mp=posM[i];
+
+    if(name==='REST'||name==='SHOW'){
+      m.position.copy(rp);
+      m.lookAt(camera.position);
+      m.scale.set(1,1,1);
+      // Central O pulses gently
+      if(i===4){
+        const pulse = 1 + Math.sin(Date.now()*.002)*.06;
+        m.scale.set(pulse,pulse,pulse);
+      }
+    } else if(name==='BLAST'){
+      // Fast eOut³ so letters rocket out in the first half, then coast
+      const et = eOut(t);
+      m.position.lerpVectors(rp,bp,et);
+      // Violent tumble — amplitude grows then fades
+      const spin = dt*(Math.random()-.5)*22*(1-t*.5);
+      m.rotateX(spin); m.rotateY(spin*1.6); m.rotateZ(spin*.7);
+      // Scale: shrink slightly on launch, grow back
+      m.scale.setScalar(.35+et*.85);
+    } else if(name==='FORM'){
+      m.position.lerpVectors(bp,mp,eIO(t));
+      m.lookAt(camera.position);
+      m.scale.setScalar(.7+t*.3);
+    } else if(name==='HOLD'){
+      m.position.copy(mp);
+      m.lookAt(camera.position);
+    } else if(name==='RETURN'){
+      m.position.lerpVectors(mp,rp,eIO(t));
+      m.lookAt(camera.position);
+      m.scale.setScalar(1+Math.max(0,Math.sin(t*Math.PI))*.18);
+    }
+  });
+
+  // ── Lights ───────────────────────────────────────────────────────────────
+  const onFire = (name==='BLAST'||name==='FORM'||name==='HOLD');
+  firePL.forEach((pl,i)=>{
+    const flicker = Math.sin(Date.now()*.012+i*1.7)*1.2+1.4;
+    const tgt = name==='BLAST' ? (5*flicker)*Math.min(t*3,1)
+              : onFire          ? (3*flicker)*Math.min(t*2,1) : 0;
+    pl.intensity += (tgt-pl.intensity)*dt*7;
+  });
+  capPL.intensity = (name==='FORM'||name==='HOLD')
+    ? (5+(Math.sin(Date.now()*.007)*.5+.5)*2.5)*Math.min(t*2,1)
+    : capPL.intensity*.88;
+
+  // O glow
+  oPL.intensity = (name==='REST'||name==='SHOW')
+    ? 1.5 + Math.sin(Date.now()*.002)*.5
+    : oPL.intensity*.95;
+
+  // ── Smoke ────────────────────────────────────────────────────────────────
+  smokeParts.material.opacity =
+    (name==='FORM'||name==='HOLD') ? Math.min(t*1.5,.6)  :
+    name==='RETURN'                ? (1-t)*.6             : 0;
+
+  // ── Camera ───────────────────────────────────────────────────────────────
+  const mush = (name==='FORM'||name==='HOLD');
+  // Camera pulls back during blast to keep everything in frame
+  const camDist = name==='BLAST' ? 55 : (mush ? 40 : 32);
+  camY      += ((mush?20:8)-camY)*dt*2;
+  camLookY  += ((mush?12:4)-camLookY)*dt*2;
+  camAng    += dt * (name==='BLAST' ? .65 : .12);
+  camera.position.set(Math.sin(camAng)*camDist, camY, Math.cos(camAng)*camDist);
+  camera.lookAt(0, camLookY, 0);
+
+  // ── Phase ────────────────────────────────────────────────────────────────
+  if(pt >= dur){ ph=(ph+1)%PHASES.length; pt=0; }
+
+  renderer.render(scene, camera);
+}
+tick();
+
+window.addEventListener('resize',()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>

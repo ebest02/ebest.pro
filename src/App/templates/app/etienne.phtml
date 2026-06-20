@@ -1,0 +1,339 @@
+<?php $this->layout('layout::default', ['title' => 'Etienne']) ?>
+
+<?php /* Contenu original de la vue gematrie */ ?>
+
+<script type="importmap">
+  {
+    "imports": {
+      "three":         "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+</script>
+
+<script type="module">
+// Tout le code Three.js / shaders est conservé tel quel
+
+import * as THREE          from 'three';
+import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { AfterimagePass }  from 'three/addons/postprocessing/AfterimagePass.js';
+import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
+
+/* ═══════════════════════════════════════════════════════════
+   NOMBRES SYMBOLIQUES
+   7  = attracteur   9  = satellite
+   72 = réseau       106 = pulsation énergétique
+   ═══════════════════════════════════════════════════════════ */
+const TRAIL_LEN = 742; // 7 × 106
+
+/* ── Renderer ─────────────────────────────────────────────── */
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(0x000000);
+document.body.appendChild(renderer.domElement);
+
+let AR = innerWidth / innerHeight;
+// Ortho camera : [-AR,AR] × [-1,1] couvre tout l'écran
+const cam = new THREE.OrthographicCamera(-AR, AR, 1, -1, -10, 10);
+const scene = new THREE.Scene();
+
+// Vertex shader commun (fullscreen quad)
+const VS = `
+  varying vec2 vUV;
+  void main() { vUV = uv; gl_Position = vec4(position, 1.0); }
+`;
+
+/* ═══════════════════════════════════════════════════════════
+   1. FRACTAL — Mandelbrot animé
+   ═══════════════════════════════════════════════════════════ */
+const fractalMat = new THREE.ShaderMaterial({
+  uniforms: { uTime: { value: 0 }, uAR: { value: AR } },
+  vertexShader: VS,
+  fragmentShader: `
+    varying vec2  vUV;
+    uniform float uTime;
+    uniform float uAR;
+
+    // Palette cosinus (violet → cyan)
+    vec3 palette(float t) {
+      vec3 a = vec3(0.10, 0.05, 0.30);
+      vec3 b = vec3(0.55, 0.10, 0.60);
+      vec3 c = vec3(1.00, 0.80, 1.00);
+      vec3 d = vec3(0.00, 0.33, 0.67);
+      return a + b * cos(6.28318 * (c * t + d));
+    }
+
+    void main() {
+      vec2  uv    = (vUV * 2.0 - 1.0) * 2.0;
+      uv.x       *= uAR;
+
+      float zoom  = 1.0 + 0.15 * sin(uTime * 0.05);
+      vec2  drift = vec2(sin(uTime * 0.07) * 0.35, cos(uTime * 0.11) * 0.25);
+      vec2  c     = uv / zoom + drift;
+      vec2  z     = vec2(0.0);
+
+      int maxI = 120;
+      int i    = maxI;
+      for (int j = 0; j < 120; j++) {
+        z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+        if (dot(z, z) > 16.0) { i = j; break; }
+      }
+
+      // Intérieur de l'ensemble
+      if (i >= maxI) { gl_FragColor = vec4(0.01, 0.005, 0.04, 1.0); return; }
+
+      // Smooth colouring
+      float t   = (float(i) - log2(log2(dot(z, z))) + 4.0) / float(maxI);
+      vec3  col = palette(fract(t * 3.0 + uTime * 0.02));
+
+      // Halo sur les bords fins
+      col += vec3(0.5, 0.2, 1.0) * (1.0 - smoothstep(0.0, 0.08, t)) * 0.6;
+      // Vignette douce
+      col *= 1.0 - smoothstep(0.9, 1.8, length(uv * 0.4));
+
+      gl_FragColor = vec4(col * 0.55, 1.0);
+    }
+  `,
+  depthTest: false, depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
+const fractalMesh = new THREE.Mesh(new THREE.PlaneGeometry(2 * AR, 2), fractalMat);
+fractalMesh.renderOrder = 0;
+scene.add(fractalMesh);
+
+/* ═══════════════════════════════════════════════════════════
+   2. CHAMP QUANTIQUE — adaptation de Schrödinger
+   ═══════════════════════════════════════════════════════════ */
+const qfMat = new THREE.ShaderMaterial({
+  uniforms: { uTime: { value: 0 }, uAR: { value: AR } },
+  vertexShader: VS,
+  fragmentShader: `
+    varying vec2  vUV;
+    uniform float uTime;
+    uniform float uAR;
+
+    void main() {
+      vec2  uv     = vUV * 2.0 - 1.0;
+      uv.x        *= uAR;
+      float r      = length(uv);
+      float a      = atan(uv.y, uv.x);
+
+      // Trois fonctions d'onde superposées
+      float psi1   = sin(r * 12.24 - uTime * 2.0);
+      float psi2   = sin((uv.x + uv.y) * 9.0 - uTime * 1.3);
+      float psi3   = sin(a * 7.0 + r * 4.0 - uTime * 0.7) * 0.4;
+
+      float pulse  = 0.5 + 0.5 * sin(uTime * 2.0);
+      float energy = exp(-r * 1.5);
+      float field  = (psi1 + psi2 + psi3) * energy * (0.8 + 0.2 * pulse);
+
+      vec3 col = vec3(0.03, 0.01, 0.12)
+               + vec3(0.55, 0.05, 0.90) * max(0.0,  field)
+               + vec3(0.05, 0.30, 0.80) * max(0.0, -field)
+               + vec3(0.80, 0.40, 1.00) * field*field * energy * 0.6
+               + vec3(0.90, 0.70, 1.00) * (1.0 - smoothstep(0.0, 0.04, abs(field))) * energy * 0.5
+               + vec3(0.20, 0.05, 0.40) * exp(-r * 3.5);
+
+      col *= 1.0 - smoothstep(0.7, 1.3, r);
+      col  = col / (col + 0.8);
+
+      gl_FragColor = vec4(col * 0.42, 1.0);
+    }
+  `,
+  depthTest: false, depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
+const qfMesh = new THREE.Mesh(new THREE.PlaneGeometry(2 * AR, 2), qfMat);
+qfMesh.renderOrder = 1;
+scene.add(qfMesh);
+
+/* ═══════════════════════════════════════════════════════════
+   3. ATTRACTEUR DE LORENZ — trail
+   ═══════════════════════════════════════════════════════════ */
+const lz = { x: 0.1, y: 0.0, z: 0.0 };
+const trailPts = Array.from({ length: TRAIL_LEN }, () => new THREE.Vector3());
+const trailGeo = new THREE.BufferGeometry().setFromPoints(trailPts);
+
+const trailColors = new Float32Array(TRAIL_LEN * 3);
+for (let i = 0; i < TRAIL_LEN; i++) {
+  const t = i / TRAIL_LEN;
+  trailColors[i*3]   = 0.3 + t * 0.7;
+  trailColors[i*3+1] = 0.1 + t * 0.2;
+  trailColors[i*3+2] = 0.8 + t * 0.2;
+}
+trailGeo.setAttribute('color', new THREE.BufferAttribute(trailColors, 3));
+
+const trailLine = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({
+  vertexColors: true,
+  blending:     THREE.AdditiveBlending,
+  transparent:  true,
+  opacity:      0.9,
+  depthWrite:   false,
+  depthTest:    false,
+}));
+trailLine.renderOrder = 2;
+scene.add(trailLine);
+
+let trailHead = 0;
+function stepLorenz() {
+  const s = 10, r = 28, b = 2.667, dt = 0.005;
+  for (let i = 0; i < 3; i++) {
+    const { x, y, z } = lz;
+    lz.x += s * (y - x)       * dt;
+    lz.y += (x * (r - z) - y) * dt;
+    lz.z += (x * y - b * z)   * dt;
+    trailPts[trailHead].set(lz.x / 25 * AR, lz.y / 25, (lz.z - 25) / 35);
+    trailHead = (trailHead + 1) % TRAIL_LEN;
+  }
+  const pos = trailGeo.attributes.position;
+  for (let i = 0; i < TRAIL_LEN; i++) {
+    const idx = (trailHead + i) % TRAIL_LEN;
+    pos.setXYZ(i, trailPts[idx].x, trailPts[idx].y, trailPts[idx].z);
+  }
+  pos.needsUpdate = true;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   4. TYPOGRAPHIE → PARTICULES
+   ═══════════════════════════════════════════════════════════ */
+function buildTypo() {
+  const cW = 960, cH = 200;
+  const cv  = document.createElement('canvas');
+  cv.width  = cW;  cv.height = cH;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#000';  ctx.fillRect(0, 0, cW, cH);
+  ctx.fillStyle = '#fff';
+  ctx.font          = 'bold 62px monospace';
+  ctx.textAlign     = 'center';
+  ctx.textBaseline  = 'middle';
+  ctx.fillText('ETIENNE BROUZES', cW / 2, cH / 2 - 36);
+  ctx.font = '30px monospace';
+  ctx.fillText('02-11-1974', cW / 2, cH / 2 + 36);
+
+  const px = ctx.getImageData(0, 0, cW, cH).data;
+  const posArr = [], colArr = [];
+  for (let y = 0; y < cH; y += 3) {
+    for (let x = 0; x < cW; x += 3) {
+      if (px[(y * cW + x) * 4] > 128) {
+        posArr.push(
+          (x / cW - 0.5) * 2.0 * AR,
+          -(y / cH - 0.5) * 0.7,
+          (Math.random() - 0.5) * 0.04
+        );
+        const t = Math.random();
+        colArr.push(0.5 + t * 0.5, 0.8 + t * 0.2, 1.0);
+      }
+    }
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(posArr, 3));
+  geo.setAttribute('aColor',   new THREE.Float32BufferAttribute(colArr, 3));
+  geo.setAttribute('origPos',  new THREE.Float32BufferAttribute([...posArr], 3));
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime:      { value: 0 },
+      uAttractor: { value: new THREE.Vector3() },
+    },
+    vertexShader: `
+      attribute vec3  aColor;
+      attribute vec3  origPos;
+      varying   vec3  vColor;
+      uniform   float uTime;
+      uniform   vec3  uAttractor;
+
+      void main() {
+        vColor = aColor;
+        vec3 p = origPos;
+
+        float dist  = length(p.xy - uAttractor.xy);
+        float force = exp(-dist * dist * 4.0) * 0.05;
+        p.xy += (uAttractor.xy - p.xy) * force;
+
+        p.xy += vec2(
+          sin(origPos.x * 9.0  + uTime)       * 0.003,
+          cos(origPos.y * 7.0  + uTime * 0.7) * 0.003
+        );
+
+        gl_Position  = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        gl_PointSize = 2.0;
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      void main() { gl_FragColor = vec4(vColor, 0.85); }
+    `,
+    blending:    THREE.AdditiveBlending,
+    depthWrite:  false,
+    depthTest:   false,
+    transparent: true,
+  });
+
+  const pts = new THREE.Points(geo, mat);
+  pts.renderOrder = 3;
+  return pts;
+}
+
+const typo = buildTypo();
+scene.add(typo);
+
+/* ═══════════════════════════════════════════════════════════
+   5. POST-PROCESSING
+   ═══════════════════════════════════════════════════════════ */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, cam));
+
+composer.addPass(new UnrealBloomPass(
+  new THREE.Vector2(innerWidth, innerHeight),
+  1.3,
+  0.8,
+  0.3
+));
+
+composer.addPass(new AfterimagePass(0.88));
+composer.addPass(new OutputPass());
+
+/* ── Resize ──────────────────────────────────────────────── */
+window.addEventListener('resize', () => {
+  const w = innerWidth, h = innerHeight;
+  AR = w / h;
+  renderer.setSize(w, h);
+  composer.setSize(w, h);
+  cam.left = -AR;  cam.right = AR;
+  cam.updateProjectionMatrix();
+  fractalMat.uniforms.uAR.value = AR;
+  qfMat.uniforms.uAR.value      = AR;
+  fractalMesh.geometry.dispose();
+  fractalMesh.geometry = new THREE.PlaneGeometry(2 * AR, 2);
+  qfMesh.geometry.dispose();
+  qfMesh.geometry = new THREE.PlaneGeometry(2 * AR, 2);
+});
+
+/* ── Animation ───────────────────────────────────────────── */
+const clock = new THREE.Clock();
+
+(function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  fractalMat.uniforms.uTime.value = t;
+  qfMat.uniforms.uTime.value      = t;
+  typo.material.uniforms.uTime.value = t;
+
+  typo.material.uniforms.uAttractor.value.set(
+    lz.x / 25 * AR,
+    lz.y / 25,
+    0
+  );
+
+  stepLorenz();
+  trailLine.rotation.z = Math.sin(t * 0.04) * 0.15;
+
+  composer.render();
+})();
+</script>
+

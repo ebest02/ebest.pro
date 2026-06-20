@@ -1,0 +1,394 @@
+<?php $this->layout('layout::default', ['title' => 'Vérification du statut des sites - ebest.pro']) ?>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-soft border-light mb-4">
+            <div class="card-body">
+                <h1 class="h3 mb-4">Vérification du statut des sites web</h1>
+                
+                <div class="mb-4">
+                    <button id="checkAllBtn" class="btn btn-primary">
+                        <span class="fas fa-sync-alt mr-2"></span>
+                        Vérifier tous les sites
+                    </button>
+                    <span id="checkingStatus" class="ml-3 text-muted" style="display: none;">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                        Vérification en cours...
+                    </span>
+                </div>
+
+                <div id="sitesList">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 200px;">Vignette</th>
+                                <th>Site</th>
+                                <th>Statut</th>
+                                <th>Temps de réponse</th>
+                                <th>Dernière vérification</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sitesTableBody">
+                            <?php foreach ($sites as $site): ?>
+                            <tr data-url="<?= $this->e($site['url']) ?>">
+                                <td>
+                                    <?php
+                                    $screenshotUrl = '/api/screenshot?url=' . urlencode($site['url']);
+                                    $siteId = 'screenshot-' . md5($site['url']);
+                                    ?>
+                                    <div style="position: relative; width: 180px; height: 120px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                                        <div id="<?= $siteId ?>-spinner" class="screenshot-spinner" style="position: absolute; z-index: 2;">
+                                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                <span class="sr-only">Chargement...</span>
+                                            </div>
+                                            <div id="<?= $siteId ?>-timer" style="font-size: 10px; color: #666; margin-top: 5px; text-align: center;">0s</div>
+                                        </div>
+                                        <a href="<?= $this->e($site['url']) ?>" target="_blank" style="position: relative; z-index: 1;">
+                                            <img src="<?= $this->e($screenshotUrl) ?>" 
+                                                 alt="Vignette de <?= $this->e($site['url']) ?>" 
+                                                 class="img-thumbnail screenshot-img" 
+                                                 style="max-width: 180px; max-height: 120px; width: 180px; height: 120px; object-fit: cover; cursor: pointer; opacity: 0;"
+                                                 loading="lazy"
+                                                 data-url="<?= $this->e($site['url']) ?>"
+                                                 data-site-id="<?= $siteId ?>"
+                                                 onload="this.style.opacity='1'; this.setAttribute('data-loaded', 'true'); const spinner = document.getElementById('<?= $siteId ?>-spinner'); if(spinner) spinner.style.display='none';"
+                                                 onerror="console.error('Erreur chargement vignette:', this.src); let retries = parseInt(this.getAttribute('data-retries') || '0'); if(retries < 3) { this.setAttribute('data-retries', (retries + 1).toString()); this.src='/api/screenshot?url='+encodeURIComponent('<?= $this->e($site['url']) ?>')+'&t='+Date.now()+'&nocache=1'; } else { console.error('Échec après 3 tentatives pour <?= $this->e($site['url']) ?>'); }">
+                                        </a>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="<?= $this->e($site['url']) ?>" target="_blank" style="color: #0066cc; text-decoration: underline;">
+                                        <?= $this->e($site['url']) ?>
+                                    </a>
+                                </td>
+                                <td>
+                                    <?php
+                                    $status = $site['status'] ?? 'unknown';
+                                    $badgeClasses = ['online' => 'success', 'offline' => 'danger', 'error' => 'warning', 'unknown' => 'secondary'];
+                                    $statusTexts = ['online' => 'En ligne', 'offline' => 'Hors ligne', 'error' => 'Erreur', 'unknown' => 'Inconnu'];
+                                    $badgeClass = $badgeClasses[$status] ?? 'secondary';
+                                    $statusText = $statusTexts[$status] ?? 'Inconnu';
+                                    ?>
+                                    <span class="badge badge-<?= $badgeClass ?>">
+                                        <?= $statusText ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if (isset($site['responseTime'])): ?>
+                                        <?= $this->e($site['responseTime']) ?> ms
+                                    <?php else: ?>
+                                        <span class="text-muted">-</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (isset($site['lastCheck'])): ?>
+                                        <?= $this->e($site['lastCheck']) ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">Jamais</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php $this->start('javascript') ?>
+<style>
+.screenshot-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.screenshot-spinner .spinner-border {
+    width: 2rem;
+    height: 2rem;
+    border-width: 0.2em;
+}
+</style>
+<script>
+(function() {
+    const checkAllBtn = document.getElementById('checkAllBtn');
+    const checkingStatus = document.getElementById('checkingStatus');
+    const sitesTableBody = document.getElementById('sitesTableBody');
+    
+    // Fonction pour démarrer le timer pour une vignette
+    function startScreenshotTimer(siteId) {
+        const timerElement = document.getElementById(siteId + '-timer');
+        const spinner = document.getElementById(siteId + '-spinner');
+        if (!timerElement || !spinner) return;
+        
+        // Vérifier si l'image est déjà chargée
+        const img = document.querySelector(`img[data-site-id="${siteId}"]`);
+        if (img && img.complete && img.naturalHeight !== 0) {
+            img.style.opacity = '1';
+            spinner.style.display = 'none';
+            return;
+        }
+        
+        let seconds = 0;
+        const startTime = Date.now();
+        
+        const interval = setInterval(() => {
+            seconds++;
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            if (minutes > 0) {
+                timerElement.textContent = `${minutes}m ${secs}s`;
+            } else {
+                timerElement.textContent = `${secs}s`;
+            }
+            
+            // Vérifier si l'image est chargée
+            const img = document.querySelector(`img[data-site-id="${siteId}"]`);
+            if (img && img.complete && img.naturalHeight !== 0) {
+                clearInterval(interval);
+                img.style.opacity = '1';
+                spinner.style.display = 'none';
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                timerElement.textContent = `✓ ${elapsed}s`;
+                timerElement.style.color = '#28a745';
+                // Masquer le timer après 2 secondes
+                setTimeout(() => {
+                    spinner.style.display = 'none';
+                }, 2000);
+            }
+        }, 1000);
+        
+        // Nettoyer après 5 minutes maximum
+        setTimeout(() => {
+            clearInterval(interval);
+            if (spinner && spinner.style.display !== 'none') {
+                timerElement.textContent = 'Timeout';
+                timerElement.style.color = '#dc3545';
+            }
+        }, 300000);
+    }
+    
+    // Fonction pour afficher une image
+    function showImage(img, siteId) {
+        if (img.getAttribute('data-shown') === 'true') return; // Déjà affichée
+        img.style.opacity = '1';
+        img.setAttribute('data-shown', 'true');
+        const spinner = document.getElementById(siteId + '-spinner');
+        if (spinner) spinner.style.display = 'none';
+    }
+    
+    // Fonction pour vérifier si une image est chargée
+    function isImageLoaded(img) {
+        return img.complete && 
+               img.naturalHeight !== 0 && 
+               img.naturalWidth !== 0 &&
+               img.naturalWidth > 0 && 
+               img.naturalHeight > 0;
+    }
+    
+    // Démarrer les timers pour toutes les vignettes existantes
+    // Vérifier aussi si les images sont déjà chargées
+    function initializeScreenshots() {
+        document.querySelectorAll('.screenshot-img').forEach(img => {
+            const siteId = img.getAttribute('data-site-id');
+            if (siteId) {
+                // Vérifier si l'image est déjà chargée (plusieurs méthodes)
+                if (isImageLoaded(img)) {
+                    showImage(img, siteId);
+                } else {
+                    // Attacher un gestionnaire onload si pas déjà fait
+                    if (!img.hasAttribute('data-initialized')) {
+                        img.setAttribute('data-initialized', 'true');
+                        
+                        // Gestionnaire onload
+                        img.addEventListener('load', function() {
+                            showImage(this, this.getAttribute('data-site-id'));
+                        });
+                        
+                        // Gestionnaire onerror
+                        img.addEventListener('error', function() {
+                            console.error('Erreur chargement vignette:', this.src);
+                            const retries = parseInt(this.getAttribute('data-retries') || '0');
+                            if (retries < 3) {
+                                this.setAttribute('data-retries', (retries + 1).toString());
+                                this.src = '/api/screenshot?url=' + encodeURIComponent(this.getAttribute('data-url')) + '&t=' + Date.now() + '&nocache=1';
+                            }
+                        });
+                    }
+                    
+                    // Vérifier périodiquement si l'image est chargée (pour les images en cache)
+                    setTimeout(() => {
+                        if (isImageLoaded(img) && img.getAttribute('data-shown') !== 'true') {
+                            showImage(img, siteId);
+                        }
+                    }, 100);
+                    
+                    // Démarrer le timer
+                    startScreenshotTimer(siteId);
+                }
+            }
+        });
+    }
+    
+    // Initialiser au chargement de la page
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeScreenshots);
+    } else {
+        initializeScreenshots();
+    }
+    
+    // Réinitialiser après plusieurs délais pour les images qui se chargent lentement
+    setTimeout(initializeScreenshots, 500);
+    setTimeout(initializeScreenshots, 1000);
+    setTimeout(initializeScreenshots, 2000);
+    
+    // Observer pour les nouvelles images ajoutées dynamiquement
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === 1) {
+                    const imgs = node.querySelectorAll ? node.querySelectorAll('.screenshot-img') : [];
+                    imgs.forEach(img => {
+                        const siteId = img.getAttribute('data-site-id');
+                        if (siteId) {
+                            startScreenshotTimer(siteId);
+                        }
+                    });
+                }
+            });
+        });
+    });
+    
+    if (sitesTableBody) {
+        observer.observe(sitesTableBody, { childList: true, subtree: true });
+    }
+
+    function getStatusBadgeClass(status) {
+        const classes = {
+            'online': 'success',
+            'offline': 'danger',
+            'error': 'warning',
+            'unknown': 'secondary'
+        };
+        return classes[status] || 'secondary';
+    }
+
+    function getStatusText(status) {
+        const texts = {
+            'online': 'En ligne',
+            'offline': 'Hors ligne',
+            'error': 'Erreur',
+            'unknown': 'Inconnu'
+        };
+        return texts[status] || 'Inconnu';
+    }
+
+    // ID sûr pour les vignettes (btoa() plante sur les URLs avec caractères non-Latin1)
+    function getScreenshotId(url) {
+        let h = 0;
+        const s = String(url);
+        for (let i = 0; i < s.length; i++) {
+            h = ((h << 5) - h) + s.charCodeAt(i);
+            h |= 0;
+        }
+        return 'screenshot-' + Math.abs(h).toString(36);
+    }
+
+    function escapeHtmlAttr(s) {
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML.replace(/"/g, '&quot;');
+    }
+
+    function updateSitesTable(sites) {
+        sitesTableBody.innerHTML = sites.map(site => {
+            const badgeClass = getStatusBadgeClass(site.status);
+            const statusText = getStatusText(site.status);
+            const responseTime = site.responseTime ? site.responseTime + ' ms' : '<span class="text-muted">-</span>';
+            const lastCheck = site.lastCheck || '<span class="text-muted">Jamais</span>';
+            const url = String(site.url || '');
+            const urlAttr = escapeHtmlAttr(url);
+            const screenshotUrl = `/api/screenshot?url=${encodeURIComponent(url)}`;
+            const siteId = getScreenshotId(url);
+
+            return `
+                <tr data-url="${urlAttr}">
+                    <td>
+                        <div style="position: relative; width: 180px; height: 120px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                            <div id="${siteId}-spinner" class="screenshot-spinner" style="position: absolute; z-index: 2;">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="sr-only">Chargement...</span>
+                                </div>
+                                <div id="${siteId}-timer" style="font-size: 10px; color: #666; margin-top: 5px; text-align: center;">0s</div>
+                            </div>
+                            <a href="${urlAttr}" target="_blank" style="position: relative; z-index: 1;">
+                                <img src="${escapeHtmlAttr(screenshotUrl)}"
+                                     alt="Vignette de ${urlAttr}"
+                                     class="img-thumbnail screenshot-img"
+                                     style="max-width: 180px; max-height: 120px; width: 180px; height: 120px; object-fit: cover; cursor: pointer; opacity: 0;"
+                                     loading="lazy"
+                                     data-url="${urlAttr}"
+                                     data-site-id="${siteId}"
+                                     onload="this.style.opacity='1'; var s=document.getElementById('${siteId}-spinner'); if(s) s.style.display='none';"
+                                     onerror="console.error('Erreur chargement vignette:', this.src); this.onerror=null; this.src='/api/screenshot?url='+encodeURIComponent(this.getAttribute('data-url'))+'&t='+Date.now();">
+                            </a>
+                        </div>
+                    </td>
+                    <td>
+                        <a href="${urlAttr}" target="_blank" style="color: #0066cc; text-decoration: underline;">
+                            ${urlAttr}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge badge-${badgeClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td>${responseTime}</td>
+                    <td>${lastCheck}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    checkAllBtn.addEventListener('click', async function() {
+        checkAllBtn.disabled = true;
+        checkingStatus.style.display = 'inline-block';
+        
+        try {
+            const response = await fetch('/api/status-check', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json().catch(() => ({}));
+            const sites = Array.isArray(data.sites) ? data.sites : [];
+
+            if (!response.ok) {
+                const msg = data.message || data.error || ('Erreur ' + response.status);
+                alert('Erreur lors de la vérification des sites: ' + msg);
+                if (sites.length > 0) {
+                    updateSitesTable(sites);
+                    setTimeout(initializeScreenshots, 100);
+                }
+                return;
+            }
+            
+            updateSitesTable(sites);
+            setTimeout(() => {
+                initializeScreenshots();
+            }, 100);
+        } catch (error) {
+            alert('Erreur lors de la vérification des sites: ' + error.message);
+        } finally {
+            checkAllBtn.disabled = false;
+            checkingStatus.style.display = 'none';
+        }
+    });
+})();
+</script>
+<?php $this->stop() ?>

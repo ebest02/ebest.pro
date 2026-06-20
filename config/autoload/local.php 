@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * Local configuration.
+ *
+ * Copy this file to `local.php` and change its settings as required.
+ * `local.php` is ignored by git and safe to use for local and sensitive data like usernames and passwords.
+ *
+ * Optionnel : surchargez 'database', 'app_url' et 'mail' pour la base de données et l'envoi d'e-mails
+ * (récupération de mot de passe). Par défaut : SQLite (data/users.db), voir config/autoload/database.global.php.
+ * Pour MySQL : 'database' => ['dsn' => 'mysql:host=...;dbname=...', 'username' => '...', 'password' => '...', 'options' => [...]]
+ */
+
+declare(strict_types=1);
+
+
+return [
+    'database' => [
+        'dsn'      => 'mysql:host=localhost;port=3306;dbname=ebest;charset=utf8mb4',
+        'username' => 'ebest',
+        'password' => 'hUC#37DDyTKh',
+        'options'  => [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ],
+    ],
+];

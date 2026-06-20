@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Composer files
 composer.phar
 vendor/
@@ -22,3 +23,12 @@ data/DoctrineORMModule/cache/
 # Legacy ZF1
 demos/
 extras/documentation
+=======
+/.phpcs-cache
+/.psalm-cache
+/.phpunit.cache
+/clover.xml
+/coveralls-upload.json
+/phpunit.xml
+/vendor/
+>>>>>>> 9c06de6 (ebest.pro / 26)

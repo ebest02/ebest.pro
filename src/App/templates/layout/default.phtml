@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title><?=$this->e($title)?> </title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    
+    <meta name="theme-color" content="#e6e7ee">
+
+    <!-- Fontawesome -->
+    <link type="text/css" href="/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+
+    <!-- Pixel CSS -->
+    <link type="text/css" href="/css/neumorphism.css" rel="stylesheet">
+
+    
+    
+    <style>
+        body { padding-top: 70px; }
+        .app { min-height: 100vh; }
+        .app-footer { padding-bottom: 1em; }
+        /* Réduire l’espace entre le menu et le contenu */
+        main .section.section-lg { padding-top: 1.25rem; padding-bottom: 3rem; }
+        @media (min-width: 768px) {
+            main .section.section-lg { padding-top: 1.5rem; }
+        }
+        .navbar-brand { padding: 0; }
+        .navbar-brand img { margin: -.5rem 0; filter: brightness(0) invert(1); }
+
+        /* Onglet du menu actif (page courante) bien mis en évidence */
+        #navbar-main .navbar-nav .nav-link.active {
+            font-weight: 700;
+            color: #31344b !important;
+            background: rgba(230, 231, 238, 0.5);
+            box-shadow: inset 2px 2px 4px rgba(184, 185, 190, 0.4);
+            border-radius: 0.35rem;
+        }
+        /* Badges statut : En ligne = vert, Hors ligne = rouge */
+        .badge-success { background-color: #198754 !important; color: #fff !important; }
+        .badge-danger { background-color: #dc3545 !important; color: #fff !important; }
+    </style>
+    <?=$this->section('stylesheets')?>
+</head>
+<body class="app<?= isset($bodyClass) && $bodyClass !== '' ? ' ' . $this->e($bodyClass) : '' ?>">
+    <header class="header-global">
+    <nav id="navbar-main" aria-label="Primary navigation" class="navbar navbar-main navbar-expand-lg navbar-theme-primary headroom navbar-light">
+        <div class="container position-relative">
+            <a class="navbar-brand shadow-soft py-2 px-3 rounded border border-light mr-lg-4" href="/">
+               ebest.pro
+            </a>
+            <div class="navbar-collapse collapse" id="navbar_global">
+                <div class="navbar-collapse-header">
+                    <div class="row">
+                        <div class="col-6 collapse-brand">
+                            <a href="/" class="navbar-brand shadow-soft py-2 px-3 rounded border border-light">
+                                ebest.pro
+                            </a>
+                        </div>
+                        <div class="col-6 collapse-close">
+                            <a href="#navbar_global" class="fas fa-times" data-toggle="collapse" data-target="#navbar_global" aria-controls="navbar_global" aria-expanded="false" title="close" aria-label="Toggle navigation"></a>
+                        </div>
+                    </div>
+                </div>
+                <?php
+                if (session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
+                $isLoggedIn = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
+                $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+                $navActive = function ($href, $exact = false) use ($currentPath) {
+                    if ($href === '/') {
+                        return $currentPath === '/' ? ' active' : '';
+                    }
+                    if ($exact) {
+                        return $currentPath === $href ? ' active' : '';
+                    }
+                    return (strpos($currentPath, $href) === 0) ? ' active' : '';
+                };
+                ?>
+                <ul class="navbar-nav navbar-nav-hover align-items-lg-center">
+                    <li class="nav-item">
+                        <a class="nav-link<?= $navActive('/') ?>" href="/">Accueil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link<?= $navActive('/sites-status') ?>" href="/sites-status">Vérification</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link<?= $navActive('/competences') ?>" href="/competences">Compétences</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link<?= $navActive('/scripts') ?>" href="/scripts">Scripts</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link<?= $navActive('/gematrie') ?>" href="/gematrie">Gématrie</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link<?= $navActive('/palindromes') ?>" href="/palindromes">Palindromes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link<?= $navActive('/ecrits') ?>" href="/ecrits">Écrits</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link<?= $navActive('/outils') ?>" href="/outils">Outils</a>
+                    </li>
+                    <?php if ($isLoggedIn): ?>
+                    <li class="nav-item">
+                        <a class="nav-link<?= $navActive('/admin', true) ?>" href="/admin">Administration</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link<?= $navActive('/admin/docs') ?>" href="/admin/docs">Documentation</a>
+                    </li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+            <div class="d-flex align-items-center">
+                <?php if ($isLoggedIn):
+                ?>
+                <a href="/admin/logout" class="btn btn-sm btn-secondary mr-2">
+                    <span class="fas fa-sign-out-alt mr-1"></span>
+                    Déconnexion
+                </a>
+                <?php else: ?>
+                <a href="/admin/login" class="btn btn-sm btn-primary mr-2">
+                    <span class="fas fa-sign-in-alt mr-1"></span>
+                    Connexion
+                </a>
+                <?php endif; ?>
+                <button class="navbar-toggler ml-2" type="button" data-toggle="collapse" data-target="#navbar_global" aria-controls="navbar_global" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+</header>
+    <main>
+        <!-- Section -->
+        <section class="section section-lg">
+            <div class="container">
+            
+            <?=$this->section('content')?>
+        
+            </div>
+        </section>
+        <!-- End of section -->
+    </main>
+   
+<footer class="d-flex pb-5 pt-6 pt-md-7 border-top border-light bg-primary">
+<div class="container">
+            <hr />
+            <?php if ($this->section('footer')): ?>
+                <?=$this->section('footer')?>
+            <?php else: ?>
+                
+            <?php endif ?>
+        </div>
+</footer>
+    <!-- Core -->
+    <script src="/vendor/jquery/dist/jquery.min.js"></script>
+    <script src="/vendor/popper.js/dist/umd/popper.min.js"></script>
+    <script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/vendor/headroom.js/dist/headroom.min.js"></script>
+ 
+    <script src="/assets/js/neumorphism.js"></script>
+
+    <script>
+        // Gestion explicite du menu mobile (hamburger) pour garantir le fonctionnement partout
+        document.addEventListener('DOMContentLoaded', function () {
+            var toggler   = document.querySelector('#navbar-main .navbar-toggler');
+            var target    = document.getElementById('navbar_global');
+            var closeLink = document.querySelector('.collapse-close a[data-target="#navbar_global"]');
+
+            if (toggler && target) {
+                toggler.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var isShown = target.classList.contains('show');
+                    target.classList.toggle('show', !isShown);
+                    toggler.setAttribute('aria-expanded', String(!isShown));
+                });
+            }
+
+            if (closeLink && target) {
+                closeLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    target.classList.remove('show');
+                    if (toggler) {
+                        toggler.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+        });
+    </script>
+
+    <?=$this->section('javascript')?>
+</body>
+</html>

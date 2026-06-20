@@ -1,0 +1,21 @@
+# Exemple de configuration cron pour générer automatiquement les vignettes
+# 
+# Pour installer cette tâche cron, exécutez :
+#   crontab -e
+# 
+# Puis ajoutez une des lignes suivantes selon la fréquence souhaitée :
+
+# Générer les vignettes tous les jours à 2h du matin
+0 2 * * * /usr/bin/php /var/www/ebest.pro/web/bin/generate-screenshots.php >> /var/www/ebest.pro/web/data/cron-screenshots.log 2>&1
+
+# Générer les vignettes toutes les 6 heures
+0 */6 * * * /usr/bin/php /var/www/ebest.pro/web/bin/generate-screenshots.php >> /var/www/ebest.pro/web/data/cron-screenshots.log 2>&1
+
+# Générer les vignettes toutes les heures
+0 * * * * /usr/bin/php /var/www/ebest.pro/web/bin/generate-screenshots.php >> /var/www/ebest.pro/web/data/cron-screenshots.log 2>&1
+
+# Générer les vignettes tous les jours à minuit (avec force pour régénérer)
+0 0 * * * /usr/bin/php /var/www/ebest.pro/web/bin/generate-screenshots.php --force >> /var/www/ebest.pro/web/data/cron-screenshots.log 2>&1
+
+# Note: Remplacez /usr/bin/php par le chemin de votre PHP CLI si différent
+# Pour trouver le chemin: which php
